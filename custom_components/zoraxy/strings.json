@@ -1,0 +1,23 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Zoraxy - Configuration",
+        "data": {
+          "host": "Adresse de Zoraxy (ex: http://192.168.1.253:8000)",
+          "username": "Nom d'utilisateur",
+          "password": "Mot de passe",
+          "scan_interval": "Intervalle de rafraîchissement (secondes)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Impossible de se connecter à Zoraxy",
+      "invalid_auth": "Authentification incorrecte",
+      "unknown": "Erreur inconnue"
+    },
+    "abort": {
+      "already_configured": "Zoraxy est déjà configuré"
+    }
+  }
+}

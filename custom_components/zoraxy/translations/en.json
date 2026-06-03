@@ -1,0 +1,44 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Zoraxy - Configuration",
+        "data": {
+          "host": "Zoraxy address (e.g. http://192.168.1.253:8000)",
+          "username": "Username",
+          "password": "Password",
+          "scan_interval": "Refresh interval (seconds)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to Zoraxy",
+      "invalid_auth": "Invalid credentials",
+      "unknown": "Unknown error"
+    },
+    "abort": {
+      "already_configured": "Zoraxy is already configured"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "zoraxy_regles_proxy": { "name": "Proxy rules" },
+      "zoraxy_regles_actives": { "name": "Active rules" },
+      "zoraxy_certificats_tls": { "name": "TLS certificates" },
+      "zoraxy_regles_d_acces": { "name": "Access rules" },
+      "zoraxy_port_entrant": { "name": "Inbound port" }
+    },
+    "binary_sensor": {
+      "zoraxy_proxy_actif": { "name": "Proxy running" },
+      "zoraxy_tls_active": { "name": "TLS enabled" },
+      "zoraxy_redirection_https": { "name": "HTTPS redirect" },
+      "zoraxy_ecoute_port_80": { "name": "Port 80 listener" },
+      "zoraxy_mode_developpement": { "name": "Development mode" }
+    },
+    "switch": {
+      "zoraxy_redirection_https": { "name": "HTTPS redirect" },
+      "zoraxy_ecoute_port_80": { "name": "Port 80 listener" },
+      "zoraxy_mode_developpement": { "name": "Development mode" }
+    }
+  }
+}

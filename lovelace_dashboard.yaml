@@ -1,0 +1,97 @@
+# ============================================================
+# Dashboard Lovelace Zoraxy pour Home Assistant
+# ============================================================
+# Instructions :
+# 1. Copier le dossier custom_components/zoraxy/ dans /config/custom_components/
+# 2. Copier www/zoraxy-card.js dans /config/www/
+# 3. Ajouter dans configuration.yaml :
+#      lovelace:
+#        resources:
+#          - url: /local/zoraxy-card.js
+#            type: module
+# 4. Redémarrer Home Assistant
+# 5. Aller dans Paramètres > Appareils > Intégrations > Ajouter > Zoraxy
+# 6. Coller ce YAML dans une vue Lovelace en mode "Éditer le tableau de bord"
+# ============================================================
+
+title: Zoraxy - Monitoring
+views:
+  - title: Zoraxy
+    icon: mdi:router-network
+    path: zoraxy
+    cards:
+
+      # ── Carte principale custom ──────────────────────────
+      - type: custom:zoraxy-card
+        entity_prefix: sensor.zoraxy
+        switch_prefix: switch.zoraxy
+        binary_prefix: binary_sensor.zoraxy
+        zoraxy_url: http://192.168.1.253:8000   # ← adapter à votre IP
+
+      # ── Ligne d'état rapide ──────────────────────────────
+      - type: horizontal-stack
+        cards:
+          - type: entity
+            entity: binary_sensor.zoraxy_proxy_actif
+            name: Proxy
+            icon: mdi:server-network
+
+          - type: entity
+            entity: binary_sensor.zoraxy_tls_active
+            name: TLS
+            icon: mdi:shield-lock
+
+          - type: entity
+            entity: binary_sensor.zoraxy_redirection_https
+            name: HTTPS redirect
+            icon: mdi:lock-check
+
+      # ── Métriques ────────────────────────────────────────
+      - type: horizontal-stack
+        cards:
+          - type: stat
+            entity: sensor.zoraxy_regles_proxy
+            name: Règles proxy
+            icon: mdi:router-network
+
+          - type: stat
+            entity: sensor.zoraxy_regles_actives
+            name: Actives
+            icon: mdi:check-network
+
+          - type: stat
+            entity: sensor.zoraxy_certificats_tls
+            name: Certificats TLS
+            icon: mdi:certificate
+
+          - type: stat
+            entity: sensor.zoraxy_regles_d_acces
+            name: Règles d'accès
+            icon: mdi:shield-account
+
+      # ── Contrôles switches ───────────────────────────────
+      - type: entities
+        title: Contrôles Zoraxy
+        show_header_toggle: false
+        entities:
+          - entity: switch.zoraxy_redirection_https
+            name: Redirection HTTPS
+            icon: mdi:lock-check
+          - entity: switch.zoraxy_ecoute_port_80
+            name: Écouter le port 80
+            icon: mdi:web
+          - entity: switch.zoraxy_mode_developpement
+            name: Mode développement (désactive le cache)
+            icon: mdi:code-braces
+
+      # ── Port entrant ─────────────────────────────────────
+      - type: entity
+        entity: sensor.zoraxy_port_entrant
+        name: Port entrant
+        icon: mdi:ethernet-cable
+
+      # ── Lien vers l'interface web ────────────────────────
+      - type: weblink
+        name: Ouvrir l'interface Zoraxy
+        url: http://192.168.1.253:8000   # ← adapter
+        icon: mdi:open-in-new

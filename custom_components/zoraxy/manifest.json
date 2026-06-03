@@ -1,0 +1,17 @@
+{
+  "domain": "zoraxy",
+  "name": "Zoraxy Reverse Proxy",
+  "after_dependencies": [
+    "lovelace"
+  ],
+  "codeowners": [
+    "@juju35"
+  ],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/juju35/ha-zoraxy",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/juju35/ha-zoraxy/issues",
+  "requirements": [],
+  "version": "1.0.0"
+}

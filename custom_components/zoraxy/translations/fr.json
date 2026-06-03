@@ -1,0 +1,44 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Zoraxy - Configuration",
+        "data": {
+          "host": "Adresse de Zoraxy (ex: http://192.168.1.253:8000)",
+          "username": "Nom d'utilisateur",
+          "password": "Mot de passe",
+          "scan_interval": "Intervalle de rafraîchissement (secondes)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Impossible de se connecter à Zoraxy",
+      "invalid_auth": "Identifiants incorrects",
+      "unknown": "Erreur inconnue"
+    },
+    "abort": {
+      "already_configured": "Zoraxy est déjà configuré"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "zoraxy_regles_proxy": { "name": "Règles proxy" },
+      "zoraxy_regles_actives": { "name": "Règles actives" },
+      "zoraxy_certificats_tls": { "name": "Certificats TLS" },
+      "zoraxy_regles_d_acces": { "name": "Règles d'accès" },
+      "zoraxy_port_entrant": { "name": "Port entrant" }
+    },
+    "binary_sensor": {
+      "zoraxy_proxy_actif": { "name": "Proxy actif" },
+      "zoraxy_tls_active": { "name": "TLS activé" },
+      "zoraxy_redirection_https": { "name": "Redirection HTTPS" },
+      "zoraxy_ecoute_port_80": { "name": "Écoute port 80" },
+      "zoraxy_mode_developpement": { "name": "Mode développement" }
+    },
+    "switch": {
+      "zoraxy_redirection_https": { "name": "Redirection HTTPS" },
+      "zoraxy_ecoute_port_80": { "name": "Écoute port 80" },
+      "zoraxy_mode_developpement": { "name": "Mode développement" }
+    }
+  }
+}

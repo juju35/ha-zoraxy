@@ -349,6 +349,7 @@ class ZoraxyDataUpdateCoordinator(DataUpdateCoordinator):
                 resp = await self._session.get(
                     f"{self.host}/api/acme/obtainCert",
                     params={"domains": domain, "filename": domain, "email": self._acme_email, "ca": self._acme_ca, "dns": "false"},
+                    headers={"X-CSRF-Token": self._csrf_token or ""},
                     allow_redirects=True,
                 )
             text = await resp.text()

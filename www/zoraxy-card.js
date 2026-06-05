@@ -152,8 +152,8 @@ class ZoraxyCard extends HTMLElement {
     btn.dataset.ruleEnabled = String(newEnabled);
     btn.title = newEnabled ? this._t("disableRule") : this._t("enableRule");
     btn.innerHTML = newEnabled
-      ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;"></span>${this._t("disableRule")}`
-      : `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#ef4444;"></span>${this._t("enableRule")}`;
+      ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;"></span>`
+      : `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;"></span>`;
 
     try {
       await this._hass.callService("zoraxy", "toggle_proxy_rule", {
@@ -233,8 +233,8 @@ class ZoraxyCard extends HTMLElement {
             data-rule-enabled="${r.enabled}"
             title="${r.enabled ? this._t("disableRule") : this._t("enableRule")}">
             ${r.enabled
-              ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;"></span>${this._t("disableRule")}`
-              : `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#ef4444;"></span>${this._t("enableRule")}`
+              ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;"></span>`
+              : `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;"></span>`
             }
           </button>
         </td>

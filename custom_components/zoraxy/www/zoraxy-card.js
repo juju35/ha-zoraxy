@@ -221,11 +221,11 @@ class ZoraxyCard extends HTMLElement {
     return `<table style="width:100%;border-collapse:collapse;font-size:13px;">
       <tbody>${rules.map((r, i) => `<tr style="border-bottom:1px solid var(--divider-color);">
         <td style="padding:5px 4px;font-weight:500;">
-          <a href="https://${r.domain}" target="_blank" rel="noopener noreferrer"
-            style="color:inherit;text-decoration:none;"
+          <span class="domain-link" data-href="https://${r.domain}"
+            style="cursor:pointer;"
             onmouseover="this.style.textDecoration='underline'"
             onmouseout="this.style.textDecoration='none'"
-          >${r.domain}</a>
+          >${r.domain}</span>
         </td>
         <td style="padding:5px 4px;color:var(--secondary-text-color);font-size:12px;">${r.target}</td>
         <td style="text-align:center;padding:5px 4px;">
@@ -392,6 +392,14 @@ class ZoraxyCard extends HTMLElement {
         } finally {
           setTimeout(() => { btn.innerHTML = orig; btn.style.color = ""; btn.disabled = false; }, 3000);
         }
+      });
+    });
+
+    // Liens domaines proxy
+    this.shadowRoot.querySelectorAll(".domain-link").forEach(el => {
+      el.addEventListener("click", e => {
+        e.stopPropagation();
+        window.open(el.dataset.href, "_blank", "noopener,noreferrer");
       });
     });
 

@@ -33,6 +33,7 @@ class ZoraxyCard extends HTMLElement {
       expired: "Expiré", renew: "Renouveler",
       domain: "Domaine", target: "Cible", status: "État",
       on: "On", off: "Off",
+      enableRule: "Activer", disableRule: "Désactiver",
     },
     en: {
       active: "Active", inactive: "Inactive",
@@ -43,6 +44,7 @@ class ZoraxyCard extends HTMLElement {
       expired: "Expired", renew: "Renew",
       domain: "Domain", target: "Target", status: "Status",
       on: "On", off: "Off",
+      enableRule: "Enable", disableRule: "Disable",
     },
   };
 
@@ -85,6 +87,11 @@ class ZoraxyCard extends HTMLElement {
     .renew-btn{display:flex;align-items:center;justify-content:center;background:none;border:1px solid var(--divider-color);border-radius:6px;cursor:pointer;padding:4px 7px;color:var(--primary-text-color)}
     .renew-btn:hover{background:var(--primary-color,#3b82f6);color:white;border-color:transparent}
     .renew-btn:hover svg{fill:white}
+    .toggle-rule-btn{display:inline-flex;align-items:center;gap:4px;background:none;border:1px solid var(--divider-color);border-radius:6px;cursor:pointer;padding:3px 8px;font-size:11px;font-weight:500;color:var(--primary-text-color);font-family:inherit;transition:background 0.15s,color 0.15s}
+    .toggle-rule-btn.is-on{border-color:#15803d;color:#15803d}
+    .toggle-rule-btn.is-off{border-color:#b91c1c;color:#b91c1c}
+    .toggle-rule-btn:hover{background:var(--primary-color,#3b82f6);color:white;border-color:transparent}
+    .toggle-rule-btn:disabled{opacity:0.5;cursor:not-allowed}
   `;
 
   // ── Lifecycle ──────────────────────────────────────────────────────────────
@@ -136,6 +143,40 @@ class ZoraxyCard extends HTMLElement {
     await this._hass.callService("button", "press", { entity_id: id });
   }
 
+  async _toggleRule(domain, currentlyEnabled, btn) {
+    btn.disabled = true;
+
+    // Mise à jour optimiste immédiate du bouton
+    const newEnabled = !currentlyEnabled;
+    btn.className = `toggle-rule-btn ${newEnabled ? "is-on" : "is-off"}`;
+    btn.dataset.ruleEnabled = String(newEnabled);
+    btn.title = newEnabled ? this._t("disableRule") : this._t("enableRule");
+    btn.innerHTML = newEnabled
+      ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;"></span>${this._t("disableRule")}`
+      : `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#ef4444;"></span>${this._t("enableRule")}`;
+
+    try {
+      await this._hass.callService("zoraxy", "toggle_proxy_rule", {
+        domain: domain,
+        enable: newEnabled,
+      });
+      // Re-render complet après que le coordinateur HA ait rafraîchi les données
+      setTimeout(() => {
+        this._lastRender = 0;
+        this._rendered = false;
+        if (this._hass) this._render();
+      }, 3000);
+    } catch (e) {
+      console.error("Zoraxy toggleRule error:", e);
+      // Annuler la mise à jour optimiste en cas d'erreur
+      this._lastRender = 0;
+      this._rendered = false;
+      if (this._hass) this._render();
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
   _dot(on) {
     return `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${on?"#22c55e":"#ef4444"};margin-right:6px;flex-shrink:0;"></span>`;
   }
@@ -183,10 +224,20 @@ class ZoraxyCard extends HTMLElement {
         <th style="text-align:left;padding:5px 4px;color:var(--secondary-text-color);font-weight:500;">Cible</th>
         <th style="text-align:center;padding:5px 4px;color:var(--secondary-text-color);font-weight:500;">État</th>
       </tr></thead>
-      <tbody>${rules.map(r => `<tr style="border-bottom:1px solid var(--divider-color);">
+      <tbody>${rules.map((r, i) => `<tr style="border-bottom:1px solid var(--divider-color);">
         <td style="padding:5px 4px;font-weight:500;">${r.domain}</td>
         <td style="padding:5px 4px;color:var(--secondary-text-color);font-size:12px;">${r.target}</td>
-        <td style="text-align:center;padding:5px 4px;">${this._badge(r.enabled ? this._t("active") : this._t("inactive"), r.enabled ? "green" : "red")}</td>
+        <td style="text-align:center;padding:5px 4px;">
+          <button class="toggle-rule-btn ${r.enabled ? "is-on" : "is-off"}"
+            data-rule-domain="${r.domain}"
+            data-rule-enabled="${r.enabled}"
+            title="${r.enabled ? this._t("disableRule") : this._t("enableRule")}">
+            ${r.enabled
+              ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;"></span>${this._t("disableRule")}`
+              : `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#ef4444;"></span>${this._t("enableRule")}`
+            }
+          </button>
+        </td>
       </tr>`).join("")}</tbody>
     </table>`;
   }
@@ -340,6 +391,16 @@ class ZoraxyCard extends HTMLElement {
         } finally {
           setTimeout(() => { btn.innerHTML = orig; btn.style.color = ""; btn.disabled = false; }, 3000);
         }
+      });
+    });
+
+    // Boutons activation/désactivation des règles proxy
+    this.shadowRoot.querySelectorAll(".toggle-rule-btn").forEach(btn => {
+      btn.addEventListener("click", async e => {
+        e.stopPropagation();
+        const domain = btn.dataset.ruleDomain;
+        const enabled = btn.dataset.ruleEnabled === "true";
+        await this._toggleRule(domain, enabled, btn);
       });
     });
   }

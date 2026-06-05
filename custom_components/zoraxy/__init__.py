@@ -15,7 +15,7 @@ import aiohttp
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EVENT_HOMEASSISTANT_STARTED, Platform
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
@@ -164,6 +164,40 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await _cleanup_stale_entities(hass, entry, coordinator.data.get("cert_list", []))
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    # ── Service : activer/désactiver une règle proxy ───────────────────────
+    async def handle_toggle_proxy_rule(call: ServiceCall) -> None:
+        domain_name: str = call.data.get("domain", "")
+        enable: bool | None = call.data.get("enable")  # True=activer, False=désactiver, None=toggle
+        if not domain_name:
+            _LOGGER.error("Zoraxy toggle_proxy_rule: paramètre 'domain' manquant")
+            return
+        # Trouver la règle dans les données courantes pour connaître l'état actuel
+        proxy_list = (coordinator.data or {}).get("proxy_list", [])
+        current_disabled = next(
+            (r.get("Disabled", False) for r in proxy_list if r.get("RootOrMatchingDomain") == domain_name),
+            None,
+        )
+        if current_disabled is None:
+            _LOGGER.error("Zoraxy toggle_proxy_rule: domaine '%s' introuvable", domain_name)
+            return
+        # Déterminer l'action : si enable=None → toggle, sinon forcer
+        if enable is None:
+            should_enable = current_disabled  # actuellement désactivé → activer
+        else:
+            should_enable = enable
+        set_value = "true" if should_enable else "false"
+        result = await coordinator._fetch(
+            "/api/proxy/toggle",
+            method="POST",
+            fields={"ep": domain_name, "enable": set_value},
+        )
+        _LOGGER.debug("Zoraxy toggle_proxy_rule '%s' enable=%s → %s", domain_name, set_value, result)
+        await coordinator.async_request_refresh()
+
+    if not hass.services.has_service(DOMAIN, "toggle_proxy_rule"):
+        hass.services.async_register(DOMAIN, "toggle_proxy_rule", handle_toggle_proxy_rule)
+
     return True
 
 

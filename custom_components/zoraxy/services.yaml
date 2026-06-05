@@ -1,0 +1,18 @@
+toggle_proxy_rule:
+  name: Toggle proxy rule
+  description: Enable or disable a Zoraxy proxy rule.
+  fields:
+    domain:
+      name: Domain
+      description: The domain of the proxy rule (e.g. "example.com").
+      required: true
+      example: "example.com"
+      selector:
+        text:
+    enable:
+      name: Enable
+      description: Set to true to enable the rule, false to disable it.
+      required: true
+      example: true
+      selector:
+        boolean:

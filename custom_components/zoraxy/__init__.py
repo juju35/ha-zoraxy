@@ -91,14 +91,12 @@ async def _register_frontend(hass: HomeAssistant, versioned_url: str) -> None:
                 existing = next((i for i in items if base_url in i.get("url", "")), None)
 
                 if existing:
-                    # Corriger type manquant ET mettre à jour l'URL si nécessaire
+                    # Toujours écraser avec un nouvel id + nouvelle URL pour forcer le cache-busting
                     changed = False
-                    if existing.get("url") != versioned_url:
-                        existing["url"] = versioned_url
-                        changed = True
-                    if existing.get("type") != "module":
-                        existing.pop("res_type", None)
-                        existing["type"] = "module"
+                    if existing.get("url") != versioned_url or existing.get("type") != "module":
+                        items.remove(existing)
+                        items.append({"id": str(uuid.uuid4()), "type": "module", "url": versioned_url})
+                        data["data"]["items"] = items
                         changed = True
                     if not changed:
                         return False  # Déjà à jour

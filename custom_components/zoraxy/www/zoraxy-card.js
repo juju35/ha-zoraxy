@@ -11,6 +11,8 @@ class ZoraxyCard extends HTMLElement {
     refresh: "M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4",
     server:  "M4,1H20A1,1 0 0,1 21,2V6A1,1 0 0,1 20,7H4A1,1 0 0,1 3,6V2A1,1 0 0,1 4,1M4,9H20A1,1 0 0,1 21,10V14A1,1 0 0,1 20,15H4A1,1 0 0,1 3,14V10A1,1 0 0,1 4,9M4,17H20A1,1 0 0,1 21,18V22A1,1 0 0,1 20,23H4A1,1 0 0,1 3,22V18A1,1 0 0,1 4,17M9,5H10V3H9V5M9,13H10V11H9V13M9,21H10V19H9V21M6,3V5H7V3H6M6,11V13H7V11H6M6,19V21H7V19H6Z",
     redirect:"M14,3L17,6H14.5C12,6 10,8 10,10.5V14.5C8.86,14.18 8,13.19 8,12V10.5C8,6.91 10.91,4 14.5,4L17,3.97L14,1M10,21L7,18H9.5C12,18 14,16 14,13.5V9.5C15.14,9.82 16,10.81 16,12V13.5C16,17.09 13.09,20 9.5,20L7,20.03L10,23",
+    chevronDown: "M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z",
+    chevronRight:"M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z",
   };
 
   static LOGO = `<svg viewBox="0 0 100 100" style="width:28px;height:28px;flex-shrink:0;">
@@ -208,7 +210,7 @@ class ZoraxyCard extends HTMLElement {
     return `<div class="section">
       <div class="sec-header" data-id="${id}">
         <div class="sec-title">${this._mdi(icon)}<span class="sec-label">${title}</span></div>
-        <span class="sec-arrow" data-id="${id}">${open ? "▼" : "▶"}</span>
+        <span class="sec-arrow" data-id="${id}">${this._mdi(open ? ZoraxyCard.ICONS.chevronDown : ZoraxyCard.ICONS.chevronRight)}</span>
       </div>
       <div class="sec-content" data-id="${id}" style="display:${open ? "block" : "none"};">${content}</div>
     </div>`;
@@ -369,7 +371,7 @@ class ZoraxyCard extends HTMLElement {
         const arrow   = this.shadowRoot.querySelector(`.sec-arrow[data-id="${id}"]`);
         const open    = content.style.display !== "none";
         content.style.display = open ? "none" : "block";
-        arrow.textContent = open ? "▶" : "▼";
+        arrow.innerHTML = open ? this._mdi(ZoraxyCard.ICONS.chevronRight) : this._mdi(ZoraxyCard.ICONS.chevronDown);
         this._sectionOpen[id] = !open;
       });
     });

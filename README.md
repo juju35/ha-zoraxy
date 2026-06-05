@@ -105,6 +105,27 @@ zoraxy_url: http://192.168.1.253:8000
 | `switch.*_ecoute_port_80` | Active/désactive l'écoute port 80 |
 | `switch.*_mode_developpement` | Active/désactive le mode développement |
 
+### Services
+| Service | Description |
+|---------|-------------|
+| `zoraxy.toggle_proxy_rule` | Active ou désactive une règle proxy |
+
+#### `zoraxy.toggle_proxy_rule`
+
+| Paramètre | Type | Obligatoire | Description |
+|-----------|------|-------------|-------------|
+| `domain` | `string` | oui | Domaine de la règle (ex: `monapp.exemple.com`) |
+| `enable` | `boolean` | oui | `true` pour activer, `false` pour désactiver |
+
+Exemple d'utilisation dans une automatisation :
+
+```yaml
+action: zoraxy.toggle_proxy_rule
+data:
+  domain: monapp.exemple.com
+  enable: false
+```
+
 ---
 
 ## Custom Card
@@ -113,8 +134,16 @@ La carte Lovelace affiche :
 - Statut du proxy + métriques
 - Contrôles directs (HTTPS redirect, port 80, dev mode)
 - Liste des certificats avec date d'expiration et bouton de renouvellement ACME
-- Règles proxy
+- Règles proxy avec **bouton d'activation/désactivation par règle**
 - Redirections HTTP
+
+### Activation/désactivation d'une règle depuis la carte
+
+Chaque règle proxy dispose d'un bouton dans la colonne État :
+- 🟢 point vert — règle active, cliquer pour désactiver
+- 🔴 point rouge — règle désactivée, cliquer pour activer
+
+Le changement est appliqué immédiatement via le service `zoraxy.toggle_proxy_rule` et la carte se met à jour automatiquement.
 
 ---
 

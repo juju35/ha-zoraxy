@@ -225,7 +225,13 @@ class ZoraxyCard extends HTMLElement {
         <th style="text-align:center;padding:5px 4px;color:var(--secondary-text-color);font-weight:500;">État</th>
       </tr></thead>
       <tbody>${rules.map((r, i) => `<tr style="border-bottom:1px solid var(--divider-color);">
-        <td style="padding:5px 4px;font-weight:500;">${r.domain}</td>
+        <td style="padding:5px 4px;font-weight:500;">
+          <a href="https://${r.domain}" target="_blank" rel="noopener noreferrer"
+            style="color:inherit;text-decoration:none;"
+            onmouseover="this.style.textDecoration='underline'"
+            onmouseout="this.style.textDecoration='none'"
+          >${r.domain}</a>
+        </td>
         <td style="padding:5px 4px;color:var(--secondary-text-color);font-size:12px;">${r.target}</td>
         <td style="text-align:center;padding:5px 4px;">
           <button class="toggle-rule-btn ${r.enabled ? "is-on" : "is-off"}"

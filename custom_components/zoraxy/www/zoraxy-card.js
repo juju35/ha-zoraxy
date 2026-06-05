@@ -219,11 +219,6 @@ class ZoraxyCard extends HTMLElement {
   _buildRules(rules) {
     if (!rules?.length) return `<p class="empty">Aucune règle configurée.</p>`;
     return `<table style="width:100%;border-collapse:collapse;font-size:13px;">
-      <thead><tr style="border-bottom:1px solid var(--divider-color);">
-        <th style="text-align:left;padding:5px 4px;color:var(--secondary-text-color);font-weight:500;">Domaine</th>
-        <th style="text-align:left;padding:5px 4px;color:var(--secondary-text-color);font-weight:500;">Cible</th>
-        <th style="text-align:center;padding:5px 4px;color:var(--secondary-text-color);font-weight:500;">État</th>
-      </tr></thead>
       <tbody>${rules.map((r, i) => `<tr style="border-bottom:1px solid var(--divider-color);">
         <td style="padding:5px 4px;font-weight:500;">
           <a href="https://${r.domain}" target="_blank" rel="noopener noreferrer"

@@ -1,3 +1,5 @@
+const ZORAXY_CARD_VERSION = '1.1.0';
+
 class ZoraxyCard extends HTMLElement {
 
   // ── Statiques ──────────────────────────────────────────────────────────────
@@ -36,6 +38,9 @@ class ZoraxyCard extends HTMLElement {
       domain: "Domaine", target: "Cible", status: "État",
       on: "On", off: "Off",
       enableRule: "Activer", disableRule: "Désactiver",
+      ed_zoraxy_url: "URL de Zoraxy", ed_entity_prefix: "Préfixe des entités",
+      ed_zoraxy_url_helper: "Ouverte au clic sur le titre de la carte",
+      ed_entity_prefix_helper: "Partie commune des entités, par exemple zoraxy_reverse_proxy_zoraxy",
     },
     en: {
       active: "Active", inactive: "Inactive",
@@ -47,6 +52,9 @@ class ZoraxyCard extends HTMLElement {
       domain: "Domain", target: "Target", status: "Status",
       on: "On", off: "Off",
       enableRule: "Enable", disableRule: "Disable",
+      ed_zoraxy_url: "Zoraxy URL", ed_entity_prefix: "Entity prefix",
+      ed_zoraxy_url_helper: "Opened when clicking the card title",
+      ed_entity_prefix_helper: "Common part of the entity IDs, for example zoraxy_reverse_proxy_zoraxy",
     },
   };
 
@@ -121,6 +129,7 @@ class ZoraxyCard extends HTMLElement {
   }
 
   getCardSize() { return 7; }
+  static getConfigElement() { return document.createElement("zoraxy-card-editor"); }
   static getStubConfig() { return { zoraxy_url: "http://192.168.1.253:8000" }; }
 
   // ── Helpers ────────────────────────────────────────────────────────────────
@@ -417,6 +426,63 @@ class ZoraxyCard extends HTMLElement {
   }
 }
 
-customElements.define("zoraxy-card", ZoraxyCard);
-window.customCards = window.customCards || [];
-window.customCards.push({ type: "zoraxy-card", name: "Zoraxy Dashboard", description: "Dashboard Zoraxy", preview: true });
+// ── zoraxy-card-editor ────────────────────────────────────────────────────────
+const ZORAXY_EDITOR_SCHEMA = [
+  { name: "zoraxy_url", selector: { text: { type: "url" } } },
+  { name: "entity_prefix", selector: { text: {} } },
+];
+
+const ZORAXY_EDITOR_DEFAULTS = { entity_prefix: "zoraxy_reverse_proxy_zoraxy" };
+
+class ZoraxyCardEditor extends HTMLElement {
+  setConfig(config) {
+    this._config = Object.assign({}, config);
+    this._render();
+  }
+
+  set hass(hass) {
+    this._hass = hass;
+    if (this._form) this._form.hass = hass;
+    else this._render();
+  }
+
+  _render() {
+    if (!this._hass || !this._config) return;
+    if (!this._form) {
+      const lang = (this._hass.locale?.language || this._hass.language || "en").toLowerCase().startsWith("fr") ? "fr" : "en";
+      const t = (key) => ZoraxyCard.I18N[lang][key];
+      this._form = document.createElement("ha-form");
+      this._form.schema = ZORAXY_EDITOR_SCHEMA;
+      this._form.computeLabel = (field) => t("ed_" + field.name) || field.name;
+      this._form.computeHelper = (field) => t("ed_" + field.name + "_helper");
+      this._form.addEventListener("value-changed", this._valueChanged.bind(this));
+      this.appendChild(this._form);
+    }
+    this._form.hass = this._hass;
+    // Show the defaults as set, so the fields match what the card does.
+    this._form.data = Object.assign({}, ZORAXY_EDITOR_DEFAULTS, this._config);
+  }
+
+  _valueChanged(ev) {
+    ev.stopPropagation();
+    const value = Object.assign({}, ev.detail.value);
+    // Keep the YAML short: drop options left empty or at their default.
+    Object.keys(ZORAXY_EDITOR_DEFAULTS).forEach((key) => {
+      if (value[key] === ZORAXY_EDITOR_DEFAULTS[key]) delete value[key];
+    });
+    ["zoraxy_url", "entity_prefix"].forEach((key) => { if (!value[key]) delete value[key]; });
+    this._config = value;
+    this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: value }, bubbles: true, composed: true }));
+  }
+}
+
+if (!customElements.get("zoraxy-card-editor")) {
+  customElements.define("zoraxy-card-editor", ZoraxyCardEditor);
+}
+
+if (!customElements.get("zoraxy-card")) {
+  customElements.define("zoraxy-card", ZoraxyCard);
+  window.customCards = window.customCards || [];
+  window.customCards.push({ type: "zoraxy-card", name: "Zoraxy Dashboard", description: "Dashboard Zoraxy", preview: true });
+  console.info("%c ZORAXY-CARD %c v" + ZORAXY_CARD_VERSION + " ", "color:#bfdbfe;background:#0f172a;font-weight:700", "color:#0f172a;background:#bfdbfe");
+}

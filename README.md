@@ -64,6 +64,8 @@ Paramètres → Appareils & Services → **+ Ajouter** → **Zoraxy**
 
 ### 5 — Ajouter la carte Lovelace
 
+Depuis le tableau de bord : **Ajouter une carte → Zoraxy Dashboard**, puis renseigner l'URL de Zoraxy et, si besoin, le préfixe des entités dans l'éditeur visuel. Ou en YAML :
+
 ```yaml
 type: custom:zoraxy-card
 zoraxy_url: http://192.168.1.253:8000

@@ -1,6 +1,6 @@
 name: Update release notes
 
-# Rewrites a published release's notes from its CHANGELOG.md section.
+# Rewrites a published release's title and notes from its CHANGELOG.md section.
 on:
   workflow_dispatch:
     inputs:
@@ -25,4 +25,4 @@ jobs:
         run: |
           .github/scripts/release-notes.sh "${TAG#v}" > notes.md
           test -s notes.md
-          gh release edit "$TAG" --notes-file notes.md
+          gh release edit "$TAG" --title "$TAG" --notes-file notes.md

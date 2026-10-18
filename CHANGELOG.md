@@ -4,6 +4,76 @@
 
 ### What's new
 - Visual editor for the card: Zoraxy URL and entity prefix, no YAML needed. Labels in English and French.
-- Releases are now published automatically from this changelog when the version is bumped.
 
-Earlier versions are described on the [GitHub releases](https://github.com/juju35/ha-zoraxy/releases) page.
+### Maintenance
+- Releases are now published automatically from this changelog when the version is bumped.
+- MIT license added.
+
+## 1.0.11
+
+### Maintenance
+- Fixed the release workflow that builds `zoraxy-integration.zip`.
+
+## 1.0.10
+
+### Fixes
+- Section header arrows now use MDI chevron icons, as Unicode arrows did not render on some mobile devices.
+
+## 1.0.9
+
+### Fixes
+- Proxy rule domains now open in a new tab, which links did not do inside Home Assistant's shadow DOM.
+
+## 1.0.8
+
+### Changes
+- Removed the proxy rules table header, so the section looks like the certificates and redirects sections.
+
+## 1.0.7
+
+### What's new
+- Proxy rule domain names are clickable and open the service in a new tab.
+
+## 1.0.6
+
+### Fixes
+- The certificate renewal button now works: the ACME request was sent without the CSRF token and silently redirected to the login page.
+
+## 1.0.5
+
+### Fixes
+- The Lovelace resource gets a new ID when the card is updated, so browsers reload it instead of keeping the cached version.
+
+## 1.0.4
+
+### Changes
+- The card now ships only inside the integration (`custom_components/zoraxy/www`); the duplicate copy at the repository root is removed.
+- README updated.
+
+## 1.0.3
+
+### Changes
+- The proxy rule toggle button shows a status dot only, without text.
+
+## 1.0.2
+
+### What's new
+- Enable or disable a proxy rule from the card.
+- `zoraxy.toggle_proxy_rule` action.
+
+## 1.0.1
+
+### Maintenance
+- Removed the example Lovelace dashboard file.
+
+## 1.0.0
+
+First public release.
+
+### What's new
+- Configuration from the UI: Zoraxy address, username, password and refresh interval, with automatic re-login when the session expires.
+- Sensors for proxy rules, active rules, TLS certificates, access rules and listening port.
+- Per-certificate expiry sensor, "expiring within 30 days" binary sensor and ACME renewal button.
+- Switches for HTTPS redirect, port 80 listener and development mode.
+- `zoraxy-card` Lovelace card, deployed and registered automatically.
+- English and French translations.

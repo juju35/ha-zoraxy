@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.1
+
+### Fixes
+- After an update, dashboards now load the new card right away: the Lovelace resource is updated through Home Assistant instead of its storage file, which Home Assistant only read at the next restart. This is why the visual editor from 1.1.0 did not show up.
+
 ## 1.1.0
 
 ### What's new

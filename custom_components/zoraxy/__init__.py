@@ -13,6 +13,7 @@ from pathlib import Path
 
 import aiohttp
 
+from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EVENT_HOMEASSISTANT_STARTED, Platform
 from homeassistant.core import HomeAssistant, ServiceCall
@@ -61,65 +62,44 @@ def _deploy_frontend(hass: HomeAssistant) -> str | None:
 
 
 async def _register_frontend(hass: HomeAssistant, versioned_url: str) -> None:
-    """Enregistre la ressource Lovelace JS via le storage JSON de HA.
+    """Ajoute ou met à jour la ressource Lovelace de la carte, comme ha-parcel.
 
-    Lit/modifie directement .storage/lovelace_resources pour ajouter
-    la ressource, en s'assurant de charger les ressources existantes
-    avant toute modification pour ne pas les écraser.
+    Passe par la collection de ressources de Lovelace (et non par le fichier
+    .storage) pour que le frontend reçoive tout de suite la nouvelle URL :
+    le hash dans l'URL force alors le navigateur à charger la nouvelle carte.
     """
-    import json as _json
-    import uuid
-
     base_url = versioned_url.split("?")[0]
-    storage_path = Path(hass.config.config_dir) / ".storage" / "lovelace_resources"
 
     async def _do_register(_event=None) -> None:
+        lovelace = hass.data.get("lovelace")
+        resources = getattr(lovelace, "resources", None)
+        if resources is None or getattr(lovelace, "resource_mode", "storage") != "storage":
+            # Tableaux de bord en mode YAML : ressources non modifiables, charger la carte partout.
+            add_extra_js_url(hass, versioned_url)
+            return
         try:
-            # Lire le fichier storage existant
-            def _read_write() -> bool:
-                data = {"version": 1, "minor_version": 1, "key": "lovelace_resources", "data": {"items": []}}
-
-                if storage_path.exists():
-                    try:
-                        data = _json.loads(storage_path.read_text())
-                    except Exception:
-                        pass
-
-                items = data.get("data", {}).get("items", [])
-
-                # Chercher ressource existante
-                existing = next((i for i in items if base_url in i.get("url", "")), None)
-
-                if existing:
-                    # Toujours écraser avec un nouvel id + nouvelle URL pour forcer le cache-busting
-                    changed = False
-                    if existing.get("url") != versioned_url or existing.get("type") != "module":
-                        items.remove(existing)
-                        items.append({"id": str(uuid.uuid4()), "type": "module", "url": versioned_url})
-                        data["data"]["items"] = items
-                        changed = True
-                    if not changed:
-                        return False  # Déjà à jour
-                    _LOGGER.info("Zoraxy: ressource Lovelace mise à jour → %s", versioned_url)
-                else:
-                    items.append({"id": str(uuid.uuid4()), "type": "module", "url": versioned_url})
-                    data["data"]["items"] = items
-                    _LOGGER.info("Zoraxy: ressource Lovelace enregistrée → %s", versioned_url)
-
-                storage_path.write_text(_json.dumps(data, indent=4))
-                return True
-
-            changed = await hass.async_add_executor_job(_read_write)
-            if changed:
-                _LOGGER.info("Zoraxy: redémarrez le navigateur pour charger la carte Lovelace")
-
-        except Exception as err:
+            if not resources.loaded:
+                await resources.async_load()
+                resources.loaded = True
+            existing = [
+                item for item in resources.async_items() if item.get("url", "").split("?")[0] == base_url
+            ]
+            if not existing:
+                await resources.async_create_item({"res_type": "module", "url": versioned_url})
+                _LOGGER.info("Zoraxy: ressource Lovelace enregistrée → %s", versioned_url)
+            elif existing[0].get("url") != versioned_url:
+                await resources.async_update_item(existing[0]["id"], {"res_type": "module", "url": versioned_url})
+                _LOGGER.info("Zoraxy: ressource Lovelace mise à jour → %s", versioned_url)
+            for duplicate in existing[1:]:
+                await resources.async_delete_item(duplicate["id"])
+        except Exception as err:  # noqa: BLE001
             _LOGGER.warning(
                 "Zoraxy: enregistrement ressource Lovelace échoué (%s). "
                 "Ajoutez manuellement %s dans "
-                "Paramètres → Tableau de bord → Ressources (type: Module JavaScript).",
+                "Paramètres → Tableaux de bord → Ressources (type : Module JavaScript).",
                 err, versioned_url,
             )
+            add_extra_js_url(hass, versioned_url)
 
     if hass.is_running:
         await _do_register()

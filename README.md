@@ -2,7 +2,7 @@
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
 [![HACS Validation](https://github.com/juju35/ha-zoraxy/actions/workflows/hacs.yml/badge.svg)](https://github.com/juju35/ha-zoraxy/actions/workflows/hacs.yml)
-[![Hassfest](https://github.com/juju35/ha-zoraxy/actions/workflows/validate.yml/badge.svg)](https://github.com/juju35/ha-zoraxy/actions/workflows/validate.yml)
+[![Validate](https://github.com/juju35/ha-zoraxy/actions/workflows/validate.yml/badge.svg)](https://github.com/juju35/ha-zoraxy/actions/workflows/validate.yml)
 [![GitHub Release](https://img.shields.io/github/release/juju35/ha-zoraxy.svg)](https://github.com/juju35/ha-zoraxy/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 

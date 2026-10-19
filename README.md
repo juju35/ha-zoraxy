@@ -1,9 +1,9 @@
 # Zoraxy Reverse Proxy — Intégration Home Assistant
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
+[![HACS](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 [![HACS Validation](https://github.com/juju35/ha-zoraxy/actions/workflows/hacs.yml/badge.svg)](https://github.com/juju35/ha-zoraxy/actions/workflows/hacs.yml)
 [![Validate](https://github.com/juju35/ha-zoraxy/actions/workflows/validate.yml/badge.svg)](https://github.com/juju35/ha-zoraxy/actions/workflows/validate.yml)
-[![GitHub Release](https://img.shields.io/github/release/juju35/ha-zoraxy.svg)](https://github.com/juju35/ha-zoraxy/releases)
+[![Release](https://img.shields.io/github/v/release/juju35/ha-zoraxy)](https://github.com/juju35/ha-zoraxy/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Dashboard de monitoring complet pour [Zoraxy](https://github.com/tobychui/zoraxy) (v3.3.2+), le reverse proxy Go, intégré dans Home Assistant.

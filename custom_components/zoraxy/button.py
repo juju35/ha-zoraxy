@@ -1,4 +1,4 @@
-"""Boutons de renouvellement de certificats pour Zoraxy."""
+"""Zoraxy certificate renewal buttons."""
 from __future__ import annotations
 
 import logging
@@ -21,7 +21,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
 
 class ZoraxyCertRenewButton(CoordinatorEntity, ButtonEntity):
-    """Bouton de renouvellement ACME pour un certificat."""
+    """ACME renewal button for one certificate."""
 
     _attr_icon = "mdi:certificate-outline"
 
@@ -43,7 +43,7 @@ class ZoraxyCertRenewButton(CoordinatorEntity, ButtonEntity):
     async def async_press(self):
         success = await self.coordinator.renew_certificate(self._domain)
         if success:
-            _LOGGER.info("Zoraxy: certificat %s renouvelé", self._domain)
+            _LOGGER.info("Zoraxy: certificate %s renewed", self._domain)
             await self.coordinator.async_request_refresh()
         else:
-            _LOGGER.error("Zoraxy: échec renouvellement %s", self._domain)
+            _LOGGER.error("Zoraxy: renewal of %s failed", self._domain)

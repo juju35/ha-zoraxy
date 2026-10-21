@@ -1,4 +1,4 @@
-"""Config flow pour l'intégration Zoraxy."""
+"""Config flow for the Zoraxy integration."""
 from __future__ import annotations
 
 import asyncio
@@ -31,7 +31,7 @@ class InvalidAuth(Exception):
 
 
 async def _test_login(host: str, username: str, password: str) -> None:
-    """Vérifie les identifiants en simulant le flux login CSRF de Zoraxy."""
+    """Check the credentials by going through Zoraxy's CSRF login flow."""
     jar = aiohttp.CookieJar(unsafe=True)
     async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False), cookie_jar=jar) as session:
         try:
@@ -39,7 +39,7 @@ async def _test_login(host: str, username: str, password: str) -> None:
                 resp = await session.get(f"{host.rstrip('/')}/login.html", allow_redirects=True)
             m = CSRF_META_RE.search(await resp.text())
             if not m:
-                raise InvalidAuth("Token CSRF introuvable")
+                raise InvalidAuth("CSRF token not found")
 
             async with asyncio.timeout(10):
                 resp = await session.post(
@@ -49,7 +49,7 @@ async def _test_login(host: str, username: str, password: str) -> None:
                 )
             text = await resp.text()
             if resp.status != 200 or "error" in text.lower():
-                raise InvalidAuth(f"Login refusé: {text[:100]}")
+                raise InvalidAuth(f"Login refused: {text[:100]}")
 
         except (aiohttp.ClientConnectorError, aiohttp.ServerConnectionError) as err:
             raise CannotConnect(str(err)) from err

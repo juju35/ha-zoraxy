@@ -88,7 +88,9 @@ Stale entities are cleaned up at startup via `_cleanup_stale_entities()` using `
 
 `LoadedCerts` in `/api/proxy/status` contains the full chain per domain (leaf + intermediates + root CA), all sharing the same `PriKey` path. Deduplication by `PriKey` gives the actual count. Domain name comes from `Cert.DNSNames[0]`, expiry from `Cert.NotAfter`.
 
-## Lovelace Custom Card (`www/zoraxy-card.js`)
+## Lovelace Custom Card (`frontend/zoraxy-card.js`)
+
+Served by the integration at `/zoraxy/zoraxy-card.js` (`async_setup` registers the static path and the dashboard resource, as ha-parcel does). Versions up to 1.2.1 copied it to `/config/www/` and loaded it from `/local/zoraxy-card.js`: that copy is deleted and that resource replaced at startup.
 
 Web component `<zoraxy-card>`. Key design decisions:
 - **Throttled render**: full DOM rebuild max every 15s; lightweight `_updateValues()` in between to avoid collapsing open sections

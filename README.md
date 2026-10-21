@@ -28,7 +28,7 @@ Home Assistant integration and Lovelace card for the [Zoraxy](https://github.com
 
 ## Prerequisites
 
-- Home Assistant **2023.1** or later
+- Home Assistant **2024.11** or later
 - Zoraxy **v3.3.2** or later, and an account on its web interface
 
 ## Installation
@@ -53,8 +53,8 @@ Or manually:
 1. Copy `custom_components/zoraxy/` from the [latest release](https://github.com/juju35/ha-zoraxy/releases/latest) to `/config/custom_components/zoraxy/`
 2. Restart Home Assistant
 
-The card `zoraxy-card.js` is part of the integration: it is copied to `/config/www/` and registered as a dashboard resource at startup. If the automatic registration fails, add it in **Settings → Dashboards → ⋮ → Resources**:
-- URL: `/local/zoraxy-card.js`
+The card `zoraxy-card.js` is part of the integration: it is served at `/zoraxy/zoraxy-card.js` and added to the dashboard resources at startup (nothing is written to `/config/www/`). If the automatic registration fails, add it in **Settings → Dashboards → ⋮ → Resources**:
+- URL: `/zoraxy/zoraxy-card.js`
 - Type: **JavaScript Module**
 
 ## Configuration

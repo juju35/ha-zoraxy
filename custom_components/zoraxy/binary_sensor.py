@@ -1,4 +1,4 @@
-"""Capteurs binaires pour Zoraxy."""
+"""Zoraxy binary sensors."""
 from __future__ import annotations
 
 from datetime import datetime, timezone, timedelta
@@ -39,7 +39,7 @@ class ZoraxyBaseBinarySensor(CoordinatorEntity, BinarySensorEntity):
         return status.get("Option", {}) if isinstance(status, dict) else {}
 
 
-# ── Capteurs système ───────────────────────────────────────────────────────────
+# ── System sensors ───────────────────────────────────────────────────────────
 
 class ZoraxyProxyRunningBinarySensor(ZoraxyBaseBinarySensor):
     _attr_name = "Zoraxy - Proxy actif"
@@ -97,10 +97,10 @@ class ZoraxyDevModeBinarySensor(ZoraxyBaseBinarySensor):
     def is_on(self): return bool(self._option().get("NoCache", False))
 
 
-# ── Capteurs par certificat ────────────────────────────────────────────────────
+# ── Per-certificate sensors ────────────────────────────────────────────────────
 
 class ZoraxyCertExpiringBinarySensor(ZoraxyBaseBinarySensor):
-    """On si le certificat expire dans moins de EXPIRY_WARNING_DAYS jours."""
+    """On when the certificate expires in less than EXPIRY_WARNING_DAYS days."""
 
     _attr_device_class = BinarySensorDeviceClass.PROBLEM
 

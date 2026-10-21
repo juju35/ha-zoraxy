@@ -1,4 +1,4 @@
-"""Switches pour Zoraxy."""
+"""Zoraxy switches."""
 from __future__ import annotations
 
 from homeassistant.components.switch import SwitchEntity
@@ -27,7 +27,7 @@ class ZoraxyBaseSwitch(CoordinatorEntity, SwitchEntity):
         return {**DEVICE_INFO_BASE, "identifiers": {(DOMAIN, self._entry.entry_id)}, "configuration_url": self._entry.data["host"]}
 
     def _bool_val(self, key: str) -> bool:
-        """Lit une valeur booléenne depuis les données du coordinateur."""
+        """Read a boolean from the coordinator data."""
         val = (self.coordinator.data or {}).get(key)
         return val.get("enabled", val.get("value", False)) if isinstance(val, dict) else bool(val)
 

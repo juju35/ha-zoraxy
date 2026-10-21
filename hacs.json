@@ -2,6 +2,5 @@
   "name": "Zoraxy Reverse Proxy",
   "content_in_root": false,
   "render_readme": true,
-  "homeassistant": "2023.1.0",
-  "filename": "zoraxy-card.js"
+  "homeassistant": "2024.11.0"
 }

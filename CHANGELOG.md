@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.3.0
+
+### Changes
+- The card is served by the integration at `/zoraxy/zoraxy-card.js`, like the cards of ha-parcel, ha-iptv and ha-carburants-france: nothing is copied to `/config/www/` any more. At the first start, the copy left in `/config/www/zoraxy-card.js` by the previous versions is deleted and the `/local/zoraxy-card.js` dashboard resource is replaced. If you added that resource by hand in a YAML dashboard configuration, remove it: the card is loaded anyway.
+- The status pill sits under the title, as in the other ha-* cards.
+- Requires Home Assistant 2024.11 or later.
+
+### Maintenance
+- Logs and code comments in English.
+- The release asset is `zoraxy.zip`, holding the content of `custom_components/zoraxy/` like the other ha-* integrations.
+
 ## 1.2.1
 
 ### Changes

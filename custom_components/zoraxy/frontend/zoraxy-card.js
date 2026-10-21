@@ -1,4 +1,4 @@
-const ZORAXY_CARD_VERSION = '1.2.1';
+const ZORAXY_CARD_VERSION = '1.3.0';
 
 class ZoraxyCard extends HTMLElement {
 
@@ -78,6 +78,7 @@ class ZoraxyCard extends HTMLElement {
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
     a.name:hover { text-decoration: underline; }
     .sub { font-size: 13px; color: var(--secondary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .titles .chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
     .content { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 16px; }
     .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 8px; }
     .tile { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 10px; border-radius: 10px; min-width: 0;
@@ -386,8 +387,8 @@ class ZoraxyCard extends HTMLElement {
           <div class="titles">
             <a class="name" ${zoraxyUrl ? `href="${zoraxyUrl}" target="_blank" rel="noopener noreferrer"` : ""}>Zoraxy</a>
             <div class="sub">${sub}</div>
+            <div class="chips" id="status">${this._statusChip(proxyRunning)}</div>
           </div>
-          <span id="status">${this._statusChip(proxyRunning)}</span>
         </div>
 
         <div class="content">

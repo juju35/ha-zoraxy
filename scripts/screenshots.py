@@ -9,7 +9,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parent.parent
-CARD_JS = (ROOT / "custom_components/zoraxy/www/zoraxy-card.js").read_text()
+CARD_JS = (ROOT / "custom_components/zoraxy/frontend/zoraxy-card.js").read_text()
 NOW = "2026-10-20T08:30:00+02:00"
 WIDTH = 410
 P = "zoraxy_reverse_proxy_zoraxy"

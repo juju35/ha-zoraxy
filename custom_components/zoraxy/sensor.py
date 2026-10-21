@@ -1,4 +1,4 @@
-"""Capteurs pour l'intégration Zoraxy."""
+"""Zoraxy sensors."""
 from __future__ import annotations
 
 from datetime import datetime
@@ -129,7 +129,7 @@ class ZoraxyInboundPortSensor(ZoraxyBaseSensor):
 
 
 class ZoraxyCertExpirySensor(ZoraxyBaseSensor):
-    """Date d'expiration d'un certificat spécifique."""
+    """Expiry date of one certificate."""
 
     _attr_device_class = SensorDeviceClass.TIMESTAMP
     _attr_icon = "mdi:certificate-outline"

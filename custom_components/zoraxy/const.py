@@ -1,8 +1,8 @@
-"""Constantes pour l'intégration Zoraxy."""
+"""Constants for the Zoraxy integration."""
 
 DOMAIN = "zoraxy"
-DEFAULT_SCAN_INTERVAL = 30  # secondes
-EXPIRY_WARNING_DAYS = 30    # jours avant expiration pour l'alerte
+DEFAULT_SCAN_INTERVAL = 30  # seconds
+EXPIRY_WARNING_DAYS = 30    # days before expiry that trigger the warning
 
 DEVICE_INFO_BASE = {
     "name": "Zoraxy Reverse Proxy",
@@ -12,5 +12,5 @@ DEVICE_INFO_BASE = {
 
 
 def safe_domain(domain: str) -> str:
-    """Convertit un nom de domaine en suffixe safe pour unique_id."""
+    """Turn a domain name into a suffix safe for unique_id."""
     return domain.replace(".", "_").replace("*", "wildcard").replace("-", "_").lower()

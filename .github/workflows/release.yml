@@ -23,7 +23,7 @@ jobs:
         id: version
         run: |
           VERSION="$(jq -r .version custom_components/zoraxy/manifest.json)"
-          grep -q "ZORAXY_CARD_VERSION = '$VERSION'" custom_components/zoraxy/www/zoraxy-card.js
+          grep -q "ZORAXY_CARD_VERSION = '$VERSION'" custom_components/zoraxy/frontend/zoraxy-card.js
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           if git rev-parse -q --verify "refs/tags/v$VERSION" >/dev/null; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
@@ -34,7 +34,7 @@ jobs:
       - name: Build zip and notes
         if: steps.version.outputs.exists == 'false'
         run: |
-          zip -r zoraxy-integration.zip custom_components/zoraxy -x "*/__pycache__/*"
+          (cd custom_components/zoraxy && zip -r ../../zoraxy.zip . -x "__pycache__/*")
           .github/scripts/release-notes.sh "${{ steps.version.outputs.version }}" > notes.md
           test -s notes.md
 
@@ -45,6 +45,6 @@ jobs:
           tag_name: v${{ steps.version.outputs.version }}
           name: v${{ steps.version.outputs.version }}
           target_commitish: ${{ github.sha }}
-          files: zoraxy-integration.zip
+          files: zoraxy.zip
           body_path: notes.md
           make_latest: true

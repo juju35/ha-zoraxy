@@ -3,7 +3,7 @@
 ## 1.2.0
 
 ### Changes
-- The card now follows the look of the other juju35 cards: header with logo, name, Zoraxy address and status pill; metrics and controls as theme-colored tiles; uppercase section titles with an icon.
+- The card now follows the look of the other ha-* cards: header with logo, name, Zoraxy address and status pill; metrics and controls as theme-colored tiles; uppercase section titles with an icon.
 - Status colors come from the Home Assistant theme (`--success-color`, `--warning-color`, `--error-color`) instead of fixed Tailwind colors, and the dark tiles are gone in light mode.
 - Card size in the Sections view (`getGridOptions`).
 - Labels that were always in French ("Règles", "Aucune règle configurée"…) now follow the language; the certificate countdown reads "12 d" in English.

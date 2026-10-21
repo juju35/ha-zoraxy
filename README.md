@@ -1,4 +1,4 @@
-# Zoraxy Reverse Proxy — Intégration Home Assistant
+# ha-zoraxy
 
 [![HACS](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 [![HACS Validation](https://github.com/juju35/ha-zoraxy/actions/workflows/hacs.yml/badge.svg)](https://github.com/juju35/ha-zoraxy/actions/workflows/hacs.yml)
@@ -6,164 +6,164 @@
 [![Release](https://img.shields.io/github/v/release/juju35/ha-zoraxy)](https://github.com/juju35/ha-zoraxy/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Dashboard de monitoring complet pour [Zoraxy](https://github.com/tobychui/zoraxy) (v3.3.2+), le reverse proxy Go, intégré dans Home Assistant.
+Home Assistant integration and Lovelace card for the [Zoraxy](https://github.com/tobychui/zoraxy) reverse proxy (v3.3.2+): proxy status, controls, TLS certificates with ACME renewal, and proxy rules you can switch on and off from the dashboard.
 
----
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=juju35&repository=ha-zoraxy&category=integration)
 
-## Installation via HACS (recommandé)
+![zoraxy-card](https://raw.githubusercontent.com/juju35/ha-zoraxy/main/screenshots/card.png)
 
-### Prérequis
-[HACS](https://hacs.xyz) doit être installé dans votre Home Assistant.
+## Features
 
-### Ajouter le dépôt
+- Sensors for proxy rules, active rules, TLS certificates, access rules and the inbound port
+- One expiry sensor, one "expiring soon" binary sensor and one ACME renewal button per certificate, created dynamically
+- Switches for the HTTPS redirect, the port 80 listener and the development mode
+- A `zoraxy.toggle_proxy_rule` service to enable or disable a proxy rule from an automation
+- A Lovelace card, shipped with the integration and registered automatically:
+  - proxy status and key metrics
+  - direct controls (HTTPS redirect, port 80, dev mode)
+  - certificates with days left and a renewal button
+  - proxy rules with an on/off button per rule, and HTTP redirects
+- Visual editor for the card, light and dark mode, English and French
+- Automatic reconnection when the Zoraxy session expires (about one hour)
 
-Cliquez sur le bouton ci-dessous pour ajouter ce dépôt directement dans HACS :
+## Prerequisites
 
-[![Ajouter à HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=juju35&repository=ha-zoraxy&category=integration)
+- Home Assistant **2023.1** or later
+- Zoraxy **v3.3.2** or later, and an account on its web interface
 
-Ou manuellement :
+## Installation
 
-1. Ouvrir HACS dans Home Assistant
-2. Aller dans **Intégrations** → ⋮ → **Dépôts personnalisés**
-3. Ajouter `https://github.com/juju35/ha-zoraxy` — Catégorie : **Intégration**
-4. Rechercher **Zoraxy** et cliquer **Télécharger**
-5. Redémarrer Home Assistant
+### Via HACS (recommended)
 
-### Custom card Lovelace
+Click the button below to add the repository directly:
 
-La carte `zoraxy-card.js` est **incluse dans l'intégration** et déployée automatiquement dans `/config/www/` au démarrage. Pas besoin de l'installer séparément via HACS.
+[![Add to HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=juju35&repository=ha-zoraxy&category=integration)
 
----
+Then click **Download** and restart Home Assistant.
 
-## Installation manuelle
+Or manually:
 
-### 1 — Copier les fichiers
+1. Open HACS → **⋮** (top right) → **Custom repositories**
+2. Add `https://github.com/juju35/ha-zoraxy` — Type: **Integration**
+3. Search for **Zoraxy** and click **Download**
+4. Restart Home Assistant
 
-```
-/config/
-├── custom_components/
-│   └── zoraxy/          ← contenu du dossier custom_components/zoraxy/
-└── www/
-    └── zoraxy-card.js   ← fichier www/zoraxy-card.js
-```
+### Manual
 
-### 2 — Ressource Lovelace
+1. Copy `custom_components/zoraxy/` from the [latest release](https://github.com/juju35/ha-zoraxy/releases/latest) to `/config/custom_components/zoraxy/`
+2. Restart Home Assistant
 
-La carte `zoraxy-card.js` est **automatiquement copiée et enregistrée** dans Lovelace au démarrage. Rien à faire manuellement.
+The card `zoraxy-card.js` is part of the integration: it is copied to `/config/www/` and registered as a dashboard resource at startup. If the automatic registration fails, add it in **Settings → Dashboards → ⋮ → Resources**:
+- URL: `/local/zoraxy-card.js`
+- Type: **JavaScript Module**
 
-> Si l'enregistrement automatique échoue, ajoutez manuellement dans Paramètres → Tableau de bord → ⋮ → Ressources :
-> - URL : `/local/zoraxy-card.js` — Type : **Module JavaScript**
+## Configuration
 
-### 3 — Redémarrer Home Assistant
+### Integration
 
-### 4 — Ajouter l'intégration
+**Settings → Devices & services → Add integration → Zoraxy**, then fill in:
 
-Paramètres → Appareils & Services → **+ Ajouter** → **Zoraxy**
+| Field | Example |
+|---|---|
+| Address | `http://192.168.1.253:8000` |
+| Username / Password | Your Zoraxy credentials |
+| Refresh interval | `30` seconds |
 
-- **Adresse** : `http://192.168.1.253:8000`
-- **Nom d'utilisateur** / **Mot de passe** : identifiants Zoraxy
-- **Intervalle de rafraîchissement** : 30 secondes
+### Card
 
-### 5 — Ajouter la carte Lovelace
-
-Depuis le tableau de bord : **Ajouter une carte → Zoraxy Dashboard**, puis renseigner l'URL de Zoraxy et, si besoin, le préfixe des entités dans l'éditeur visuel. Ou en YAML :
+Edit a dashboard, click **Add card** and search for **Zoraxy Card**. Set the Zoraxy URL (opened when clicking the card title) and, if needed, the entity prefix. Or in YAML:
 
 ```yaml
 type: custom:zoraxy-card
 zoraxy_url: http://192.168.1.253:8000
 ```
 
----
+| Option | Default | Description |
+|---|---|---|
+| `zoraxy_url` | — | Zoraxy web interface, opened from the card title and shown under it |
+| `entity_prefix` | `zoraxy_reverse_proxy_zoraxy` | Common part of the entity ids |
 
-## Fonctionnalités
+### Entities
 
-### Capteurs globaux
-| Entité | Description |
-|--------|-------------|
-| `sensor.*_regles_proxy` | Nombre de règles proxy (détails en attributs) |
-| `sensor.*_regles_actives` | Règles proxy actives |
-| `sensor.*_certificats_tls` | Nombre de certificats TLS |
-| `sensor.*_regles_d_acces` | Nombre de règles d'accès |
-| `sensor.*_port_entrant` | Port d'écoute du proxy |
+| Entity | Description |
+|---|---|
+| `sensor.*_regles_proxy` | Number of proxy rules (rules and redirects as attributes) |
+| `sensor.*_regles_actives` | Active proxy rules |
+| `sensor.*_certificats_tls` | Number of TLS certificates |
+| `sensor.*_regles_d_acces` | Number of access rules |
+| `sensor.*_port_entrant` | Proxy listening port |
+| `sensor.*_cert_{domain}` | Certificate expiry date |
+| `binary_sensor.*_cert_expirant_{domain}` | `on` when the certificate expires in less than 30 days |
+| `button.*_renouveler_{domain}` | Triggers the ACME renewal |
+| `binary_sensor.*_proxy_actif` | Proxy running |
+| `binary_sensor.*_tls_active` | TLS enabled |
+| `binary_sensor.*_redirection_https` | HTTP → HTTPS redirect |
+| `binary_sensor.*_ecoute_port_80` | Listening on port 80 |
+| `binary_sensor.*_mode_developpement` | Development mode (no cache) |
+| `switch.*_redirection_https` | Turns the HTTPS redirect on or off |
+| `switch.*_ecoute_port_80` | Turns the port 80 listener on or off |
+| `switch.*_mode_developpement` | Turns the development mode on or off |
 
-### Par certificat (créés dynamiquement)
-| Entité | Description |
-|--------|-------------|
-| `sensor.*_cert_{domaine}` | Date d'expiration du certificat |
-| `binary_sensor.*_cert_expirant_{domaine}` | `on` si expiration < 30 jours |
-| `button.*_renouveler_{domaine}` | Déclenche le renouvellement ACME |
+The entity ids keep their historical French suffixes so existing dashboards and automations keep working; their names are translated.
 
-### Capteurs binaires
-| Entité | Description |
-|--------|-------------|
-| `binary_sensor.*_proxy_actif` | Proxy en cours d'exécution |
-| `binary_sensor.*_tls_active` | TLS activé |
-| `binary_sensor.*_redirection_https` | Redirection HTTP→HTTPS |
-| `binary_sensor.*_ecoute_port_80` | Écoute sur le port 80 |
-| `binary_sensor.*_mode_developpement` | Mode développement (no-cache) |
+### Service `zoraxy.toggle_proxy_rule`
 
-### Switches
-| Entité | Description |
-|--------|-------------|
-| `switch.*_redirection_https` | Active/désactive la redirection HTTPS |
-| `switch.*_ecoute_port_80` | Active/désactive l'écoute port 80 |
-| `switch.*_mode_developpement` | Active/désactive le mode développement |
-
-### Services
-| Service | Description |
-|---------|-------------|
-| `zoraxy.toggle_proxy_rule` | Active ou désactive une règle proxy |
-
-#### `zoraxy.toggle_proxy_rule`
-
-| Paramètre | Type | Obligatoire | Description |
-|-----------|------|-------------|-------------|
-| `domain` | `string` | oui | Domaine de la règle (ex: `monapp.exemple.com`) |
-| `enable` | `boolean` | oui | `true` pour activer, `false` pour désactiver |
-
-Exemple d'utilisation dans une automatisation :
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `domain` | `string` | yes | Domain of the rule (e.g. `myapp.example.com`) |
+| `enable` | `boolean` | yes | `true` to enable, `false` to disable |
 
 ```yaml
 action: zoraxy.toggle_proxy_rule
 data:
-  domain: monapp.exemple.com
+  domain: myapp.example.com
   enable: false
 ```
 
----
+## Screenshots
 
-## Custom Card
+| Light (certificates open) | Dark (proxy rules open) |
+|---|---|
+| ![card](screenshots/card.png) | ![card dark](screenshots/card-dark.png) |
 
-La carte Lovelace affiche :
-- Statut du proxy + métriques
-- Contrôles directs (HTTPS redirect, port 80, dev mode)
-- Liste des certificats avec date d'expiration et bouton de renouvellement ACME
-- Règles proxy avec **bouton d'activation/désactivation par règle**
-- Redirections HTTP
+## How it works
 
-### Activation/désactivation d'une règle depuis la carte
+The integration logs in to the Zoraxy web API, polls it at the refresh interval and logs in again when the session expires. Certificate entities are created as certificates appear in Zoraxy.
 
-Chaque règle proxy dispose d'un bouton dans la colonne État :
-- 🟢 point vert — règle active, cliquer pour désactiver
-- 🔴 point rouge — règle désactivée, cliquer pour activer
+On the card, the button next to each proxy rule calls `zoraxy.toggle_proxy_rule`; the button updates at once and the card refreshes when the integration has polled Zoraxy again. Certificates turn orange under 30 days and red under 7 days.
 
-Le changement est appliqué immédiatement via le service `zoraxy.toggle_proxy_rule` et la carte se met à jour automatiquement.
+To debug:
 
----
+```yaml
+logger:
+  logs:
+    custom_components.zoraxy: debug
+```
 
-## Notes
+## Development
 
-- Nécessite Zoraxy **v3.3.2+**
-- La session Zoraxy expire après ~1h — la reconnexion est automatique
-- Multilingue : 🇫🇷 français et 🇬🇧 anglais
-- Pour déboguer :
-  ```yaml
-  logger:
-    logs:
-      custom_components.zoraxy: debug
-  ```
+```bash
+pip install playwright && playwright install chromium
+python scripts/screenshots.py   # renders the card with mock entities into screenshots/
+```
 
-## Compatibilité
+### Releasing
 
-- Home Assistant **2023.1+**
-- Zoraxy **v3.3.x**
+1. Bump the version in `custom_components/zoraxy/manifest.json` and `ZORAXY_CARD_VERSION` in the card
+2. Add a `## <version>` section at the top of [CHANGELOG.md](CHANGELOG.md)
+3. Push to `main`: the **Release** workflow creates the tag and the GitHub release with the changelog section as notes
+
+## Translations
+
+The integration and the card follow the language of Home Assistant. Currently supported:
+
+| Language | Code |
+|---|---|
+| English | `en` |
+| Français | `fr` |
+
+Contributions for additional languages are welcome!
+
+## License
+
+[MIT](LICENSE)

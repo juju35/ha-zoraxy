@@ -1,8 +1,8 @@
-const ZORAXY_CARD_VERSION = '1.1.1';
+const ZORAXY_CARD_VERSION = '1.2.0';
 
 class ZoraxyCard extends HTMLElement {
 
-  // ── Statiques ──────────────────────────────────────────────────────────────
+  // ── Statics ────────────────────────────────────────────────────────────────
 
   static ICONS = {
     router:  "M10.59,13.41C11,13.8 11,14.44 10.59,14.83C10.2,15.22 9.56,15.22 9.17,14.83C7.22,12.88 7.22,9.71 9.17,7.76L12.76,4.17C14.71,2.22 17.88,2.22 19.83,4.17C21.78,6.12 21.78,9.29 19.83,11.24L18.29,12.78C18.3,12.03 18.17,11.27 17.89,10.56L18.71,9.76C19.9,8.56 19.9,6.56 18.71,5.36C17.5,4.17 15.5,4.17 14.29,5.36L10.7,8.95C9.5,10.15 9.5,12.15 10.59,13.41M13.41,9.17C13.8,8.78 14.44,8.78 14.83,9.17C16.78,11.12 16.78,14.29 14.83,16.24L11.24,19.83C9.29,21.78 6.12,21.78 4.17,19.83C2.22,17.88 2.22,14.71 4.17,12.76L5.71,11.22C5.7,11.97 5.83,12.73 6.11,13.44L5.29,14.24C4.1,15.44 4.1,17.44 5.29,18.64C6.5,19.83 8.5,19.83 9.71,18.64L13.3,15.05C14.5,13.85 14.5,11.85 13.41,10.59C13,10.2 13,9.56 13.41,9.17Z",
@@ -17,7 +17,7 @@ class ZoraxyCard extends HTMLElement {
     chevronRight:"M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z",
   };
 
-  static LOGO = `<svg viewBox="0 0 100 100" style="width:28px;height:28px;flex-shrink:0;">
+  static LOGO = `<svg class="logo" viewBox="0 0 100 100" role="img" aria-label="Zoraxy">
     <rect width="100" height="100" rx="16" fill="#0f172a"/>
     <circle cx="50" cy="50" r="18" fill="#bfdbfe"/>
     <path d="M50 20 L44 32 L56 32 Z" fill="#bfdbfe"/>
@@ -34,7 +34,7 @@ class ZoraxyCard extends HTMLElement {
       controls: "Contrôles", httpsRedirect: "HTTPS redirect", port80: "Port 80", devMode: "Dev mode",
       certsSection: "Certificats", proxyRules: "Règles proxy", redirections: "Redirections",
       noCerts: "Aucun certificat trouvé.", noRules: "Aucune règle configurée.", noRedirects: "Aucune redirection configurée.",
-      expired: "Expiré", renew: "Renouveler",
+      expired: "Expiré", renew: "Renouveler", daysLeft: "J-{n}",
       domain: "Domaine", target: "Cible", status: "État",
       on: "On", off: "Off",
       enableRule: "Activer", disableRule: "Désactiver",
@@ -48,7 +48,7 @@ class ZoraxyCard extends HTMLElement {
       controls: "Controls", httpsRedirect: "HTTPS redirect", port80: "Port 80", devMode: "Dev mode",
       certsSection: "Certificates", proxyRules: "Proxy rules", redirections: "Redirections",
       noCerts: "No certificate found.", noRules: "No rule configured.", noRedirects: "No redirect configured.",
-      expired: "Expired", renew: "Renew",
+      expired: "Expired", renew: "Renew", daysLeft: "{n} d",
       domain: "Domain", target: "Target", status: "Status",
       on: "On", off: "Off",
       enableRule: "Enable", disableRule: "Disable",
@@ -58,50 +58,60 @@ class ZoraxyCard extends HTMLElement {
     },
   };
 
-  static BADGE_COLORS = {
-    green:  ["#dcfce7","#15803d"],
-    red:    ["#fee2e2","#b91c1c"],
-    orange: ["#fff7ed","#c2410c"],
-    gray:   ["#f3f4f6","#374151"],
-  };
-
   static CSS = `
-    :host{display:block}
-    ha-card{padding:16px;box-sizing:border-box}
-    .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-    .title-link{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:500;text-decoration:none;color:var(--primary-text-color)}
-    .bs{display:inline-flex;align-items:center;padding:4px 10px;border-radius:16px;font-size:12px;font-weight:500}
-    .ok{background:#dcfce7;color:#15803d}.err{background:#fee2e2;color:#b91c1c}
-    .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;margin-bottom:16px}
-    .metric{background:#0f172a;border-radius:10px;padding:10px 8px;text-align:center}
-    .mv{font-size:22px;font-weight:600;color:#bfdbfe}
-    .ml{font-size:11px;color:#93c5fd;margin-top:2px}
-    .section{margin-bottom:14px}
-    .sec-header{display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:8px 0;border-bottom:1px solid var(--divider-color);margin-bottom:8px}
-    .sec-title{display:flex;align-items:center;gap:8px;color:var(--secondary-text-color)}
-    .sec-label{font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.5px}
-    .sec-arrow{color:var(--secondary-text-color);font-size:12px}
-    .controls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-    .ctrl{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 6px;background:#0f172a;border-radius:10px;cursor:pointer;border:none;width:100%;font-family:inherit;color:var(--primary-text-color)}
-    .ctrl:hover{background:var(--primary-color,#3b82f6);color:white}
-    .ctrl:hover svg,.ctrl:hover .cl{fill:white;color:rgba(255,255,255,0.8)}
-    .cl{font-size:11px;color:#93c5fd;text-align:center}
-    .cs{font-size:11px;font-weight:500}
-    .on{color:#22c55e}.off{color:#ef4444}
-    .row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--divider-color);gap:8px}
-    .row-left{display:flex;align-items:center;gap:6px;min-width:0}
-    .row-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
-    .row-label{font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .row-sub{font-size:12px;color:var(--secondary-text-color);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .empty{color:var(--secondary-text-color);font-size:13px;padding:8px 0}
-    .renew-btn{display:flex;align-items:center;justify-content:center;background:none;border:1px solid var(--divider-color);border-radius:6px;cursor:pointer;padding:4px 7px;color:var(--primary-text-color)}
-    .renew-btn:hover{background:var(--primary-color,#3b82f6);color:white;border-color:transparent}
-    .renew-btn:hover svg{fill:white}
-    .toggle-rule-btn{display:inline-flex;align-items:center;gap:4px;background:none;border:1px solid var(--divider-color);border-radius:6px;cursor:pointer;padding:3px 8px;font-size:11px;font-weight:500;color:var(--primary-text-color);font-family:inherit;transition:background 0.15s,color 0.15s}
-    .toggle-rule-btn.is-on{border-color:#15803d;color:#15803d}
-    .toggle-rule-btn.is-off{border-color:#b91c1c;color:#b91c1c}
-    .toggle-rule-btn:hover{background:var(--primary-color,#3b82f6);color:white;border-color:transparent}
-    .toggle-rule-btn:disabled{opacity:0.5;cursor:not-allowed}
+    :host {
+      display: block;
+      --zx-accent: var(--primary-color, #03a9f4);
+      --zx-ok: var(--success-color, #43a047);
+      --zx-warn: var(--warning-color, #ffa600);
+      --zx-crit: var(--error-color, #db4437);
+    }
+    ha-card { overflow: hidden; }
+    .icon { width: 18px; height: 18px; fill: currentColor; flex: none; }
+    .ok { --c: var(--zx-ok); } .warn { --c: var(--zx-warn); } .crit { --c: var(--zx-crit); } .idle { --c: var(--secondary-text-color); }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c, var(--zx-ok)); flex: none; display: inline-block; }
+    .chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 500;
+            background: color-mix(in srgb, var(--c, var(--zx-ok)) 15%, transparent); color: var(--c, var(--zx-ok)); white-space: nowrap; }
+    .header { display: flex; align-items: center; gap: 12px; padding: 16px 16px 8px; }
+    .logo { width: 40px; height: 40px; flex: none; }
+    .titles { flex: 1; min-width: 0; }
+    .name { font-size: 18px; font-weight: 500; line-height: 1.25; color: var(--primary-text-color); text-decoration: none;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+    a.name:hover { text-decoration: underline; }
+    .sub { font-size: 13px; color: var(--secondary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .content { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 16px; }
+    .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 8px; }
+    .tile { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 10px; border-radius: 10px; min-width: 0;
+            background: var(--secondary-background-color, rgba(127,127,127,.08)); }
+    .mv { font-size: 18px; font-weight: 500; color: var(--primary-text-color); }
+    .ml { font-size: 12px; color: var(--secondary-text-color); }
+    .sec-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 8px; }
+    .section-title { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; text-transform: uppercase;
+                     letter-spacing: .04em; color: var(--secondary-text-color); }
+    .sec-arrow { color: var(--secondary-text-color); display: flex; }
+    .controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .ctrl { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 6px; border-radius: 10px; cursor: pointer;
+            border: none; width: 100%; font-family: inherit; color: var(--primary-text-color);
+            background: var(--secondary-background-color, rgba(127,127,127,.08)); transition: background .15s; }
+    .ctrl .icon { color: var(--c, var(--secondary-text-color)); }
+    .ctrl:hover { background: color-mix(in srgb, var(--zx-accent) 15%, var(--secondary-background-color, transparent)); }
+    .cl { font-size: 12px; color: var(--secondary-text-color); text-align: center; }
+    .cs { font-size: 12px; font-weight: 500; color: var(--c); }
+    .row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; gap: 8px; font-size: 14px; }
+    .row + .row { border-top: 1px solid var(--divider-color); }
+    .row-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .row-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .row-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .row-sub { font-size: 12px; color: var(--secondary-text-color); max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .domain-link { cursor: pointer; }
+    .domain-link:hover { text-decoration: underline; }
+    .empty { color: var(--secondary-text-color); font-size: 13px; padding: 4px 0; margin: 0; }
+    .icon-btn { display: inline-flex; align-items: center; justify-content: center; gap: 4px; background: none; cursor: pointer;
+                border: 1px solid var(--divider-color); border-radius: 10px; padding: 4px 8px; font-family: inherit;
+                font-size: 12px; font-weight: 500; color: var(--c, var(--primary-text-color)); transition: background .15s; }
+    .icon-btn:hover { background: color-mix(in srgb, var(--zx-accent) 15%, transparent); }
+    .icon-btn:disabled { opacity: .5; cursor: not-allowed; }
+    .icon-btn.busy { --c: var(--zx-warn); }
   `;
 
   // ── Lifecycle ──────────────────────────────────────────────────────────────
@@ -129,6 +139,7 @@ class ZoraxyCard extends HTMLElement {
   }
 
   getCardSize() { return 7; }
+  getGridOptions() { return { columns: 12, min_columns: 6 }; }
   static getConfigElement() { return document.createElement("zoraxy-card-editor"); }
   static getStubConfig() { return { zoraxy_url: "http://192.168.1.253:8000" }; }
 
@@ -157,21 +168,19 @@ class ZoraxyCard extends HTMLElement {
   async _toggleRule(domain, currentlyEnabled, btn) {
     btn.disabled = true;
 
-    // Mise à jour optimiste immédiate du bouton
+    // Optimistic update of the button
     const newEnabled = !currentlyEnabled;
-    btn.className = `toggle-rule-btn ${newEnabled ? "is-on" : "is-off"}`;
+    btn.className = `icon-btn rule-btn ${newEnabled ? "ok" : "crit"}`;
     btn.dataset.ruleEnabled = String(newEnabled);
     btn.title = newEnabled ? this._t("disableRule") : this._t("enableRule");
-    btn.innerHTML = newEnabled
-      ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;"></span>`
-      : `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;"></span>`;
+    btn.innerHTML = this._ruleBtnContent(newEnabled);
 
     try {
       await this._hass.callService("zoraxy", "toggle_proxy_rule", {
         domain: domain,
         enable: newEnabled,
       });
-      // Re-render complet après que le coordinateur HA ait rafraîchi les données
+      // Full re-render once the Home Assistant coordinator has refreshed the data
       setTimeout(() => {
         this._lastRender = 0;
         this._rendered = false;
@@ -179,7 +188,7 @@ class ZoraxyCard extends HTMLElement {
       }, 3000);
     } catch (e) {
       console.error("Zoraxy toggleRule error:", e);
-      // Annuler la mise à jour optimiste en cas d'erreur
+      // Roll back the optimistic update
       this._lastRender = 0;
       this._rendered = false;
       if (this._hass) this._render();
@@ -189,12 +198,19 @@ class ZoraxyCard extends HTMLElement {
   }
 
   _dot(on) {
-    return `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${on?"#22c55e":"#ef4444"};margin-right:6px;flex-shrink:0;"></span>`;
+    return `<span class="dot ${on ? "ok" : "crit"}"></span>`;
   }
 
-  _badge(text, color) {
-    const [bg, fg] = ZoraxyCard.BADGE_COLORS[color] || ZoraxyCard.BADGE_COLORS.gray;
-    return `<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500;background:${bg};color:${fg};">${text}</span>`;
+  _chip(text, cls) {
+    return `<span class="chip ${cls}">${text}</span>`;
+  }
+
+  _statusChip(running) {
+    return this._chip(`<span class="dot"></span>${running ? this._t("active") : this._t("inactive")}`, running ? "ok" : "crit");
+  }
+
+  _ruleBtnContent(on) {
+    return `<span class="dot"></span>${on ? this._t("on") : this._t("off")}`;
   }
 
   _daysUntil(dateStr) {
@@ -203,10 +219,10 @@ class ZoraxyCard extends HTMLElement {
   }
 
   _mdi(path) {
-    return `<svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor;flex-shrink:0;"><path d="${path}"/></svg>`;
+    return `<svg class="icon" viewBox="0 0 24 24"><path d="${path}"/></svg>`;
   }
 
-  // Ligne générique : point + label à gauche, contenu à droite
+  // Generic row: dot + label on the left, content on the right
   _row(dotOn, label, right) {
     return `<div class="row">
       <div class="row-left">${this._dot(dotOn)}<span class="row-label">${label}</span></div>
@@ -218,7 +234,7 @@ class ZoraxyCard extends HTMLElement {
     const open = this._sectionOpen[id] === true;
     return `<div class="section">
       <div class="sec-header" data-id="${id}">
-        <div class="sec-title">${this._mdi(icon)}<span class="sec-label">${title}</span></div>
+        <div class="section-title">${this._mdi(icon)}<span>${title}</span></div>
         <span class="sec-arrow" data-id="${id}">${this._mdi(open ? ZoraxyCard.ICONS.chevronDown : ZoraxyCard.ICONS.chevronRight)}</span>
       </div>
       <div class="sec-content" data-id="${id}" style="display:${open ? "block" : "none"};">${content}</div>
@@ -228,49 +244,37 @@ class ZoraxyCard extends HTMLElement {
   // ── Builders ───────────────────────────────────────────────────────────────
 
   _buildRules(rules) {
-    if (!rules?.length) return `<p class="empty">Aucune règle configurée.</p>`;
-    return `<table style="width:100%;border-collapse:collapse;font-size:13px;">
-      <tbody>${rules.map((r, i) => `<tr style="border-bottom:1px solid var(--divider-color);">
-        <td style="padding:5px 4px;font-weight:500;">
-          <span class="domain-link" data-href="https://${r.domain}"
-            style="cursor:pointer;"
-            onmouseover="this.style.textDecoration='underline'"
-            onmouseout="this.style.textDecoration='none'"
-          >${r.domain}</span>
-        </td>
-        <td style="padding:5px 4px;color:var(--secondary-text-color);font-size:12px;">${r.target}</td>
-        <td style="text-align:center;padding:5px 4px;">
-          <button class="toggle-rule-btn ${r.enabled ? "is-on" : "is-off"}"
-            data-rule-domain="${r.domain}"
-            data-rule-enabled="${r.enabled}"
-            title="${r.enabled ? this._t("disableRule") : this._t("enableRule")}">
-            ${r.enabled
-              ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;"></span>`
-              : `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;"></span>`
-            }
-          </button>
-        </td>
-      </tr>`).join("")}</tbody>
-    </table>`;
+    if (!rules?.length) return `<p class="empty">${this._t("noRules")}</p>`;
+    return rules.map((r) => {
+      const right = `<span class="row-sub" title="${r.target}">${r.target}</span>
+        <button class="icon-btn rule-btn ${r.enabled ? "ok" : "crit"}"
+          data-rule-domain="${r.domain}"
+          data-rule-enabled="${r.enabled}"
+          title="${r.enabled ? this._t("disableRule") : this._t("enableRule")}">${this._ruleBtnContent(r.enabled)}</button>`;
+      return `<div class="row">
+        <div class="row-left"><span class="row-label domain-link" data-href="https://${r.domain}">${r.domain}</span></div>
+        <div class="row-right">${right}</div>
+      </div>`;
+    }).join("");
   }
 
   _buildCerts(prefix) {
     const certPrefix = `sensor.${prefix}_cert_`;
     const sensors = Object.keys(this._hass?.states || {}).filter(id => id.startsWith(certPrefix)).sort();
-    if (!sensors.length) return `<p class="empty">Aucun certificat trouvé.</p>`;
+    if (!sensors.length) return `<p class="empty">${this._t("noCerts")}</p>`;
     return sensors.map(sensorId => {
       const suffix    = sensorId.slice(certPrefix.length);
       const days      = this._daysUntil(this._state(sensorId));
       const isExpiring = this._isOn(`binary_sensor.${prefix}_cert_expirant_${suffix}`);
       const domain    = this._attr(sensorId, "domain") || suffix.replace(/_/g, ".");
       const btnId     = `button.${prefix}_renouveler_${suffix}`;
-      let daysLabel = "?", daysColor = "gray";
+      let daysLabel = "?", daysCls = "idle";
       if (days !== null) {
-        daysLabel = days < 0 ? this._t("expired") : `J-${days}`;
-        daysColor = days < 0 || days < 7 ? "red" : days < 30 ? "orange" : "green";
+        daysLabel = days < 0 ? this._t("expired") : this._t("daysLeft").replace("{n}", days);
+        daysCls = days < 7 ? "crit" : days < 30 ? "warn" : "ok";
       }
-      const right = `${this._badge(daysLabel, daysColor)}
-        <button class="renew-btn" data-entity="${btnId}" title="${this._t('renew')}">
+      const right = `${this._chip(daysLabel, daysCls)}
+        <button class="icon-btn renew-btn" data-entity="${btnId}" title="${this._t("renew")}">
           ${this._mdi(ZoraxyCard.ICONS.refresh)}
         </button>`;
       return this._row(!isExpiring, domain, right);
@@ -278,20 +282,20 @@ class ZoraxyCard extends HTMLElement {
   }
 
   _buildRedirects(redirects) {
-    if (!redirects?.length) return `<p class="empty">Aucune redirection configurée.</p>`;
+    if (!redirects?.length) return `<p class="empty">${this._t("noRedirects")}</p>`;
     return redirects.map(r => {
       const src   = r.RedirectURL || "?";
       const dst   = r.TargetURL || "?";
       const code  = r.StatusCode ? `${r.StatusCode}` : "";
       const https = dst.startsWith("https");
-      const right = `<span style="font-size:11px;color:var(--secondary-text-color);">→ ${code}</span>
+      const right = `<span class="row-sub">→ ${code}</span>
         <span class="row-sub" title="${dst}">${dst}</span>
         ${https ? this._mdi(ZoraxyCard.ICONS.lock) : ""}`;
       return this._row(true, src, right);
     }).join("");
   }
 
-  // ── Update partiel (entre les re-renders complets) ─────────────────────────
+  // ── Partial update (between full re-renders) ───────────────────────────────
 
   _updateValues() {
     const root = this.shadowRoot;
@@ -300,21 +304,23 @@ class ZoraxyCard extends HTMLElement {
     const sp  = `sensor.${p}`;
     const bp  = `binary_sensor.${p}`;
 
-    const proxyRunning = this._isOn(`${bp}_proxy_actif`);
-    const bs = root.querySelector(".bs");
-    if (bs) { bs.className = `bs ${proxyRunning ? "ok" : "err"}`; bs.innerHTML = `${this._dot(proxyRunning)}${proxyRunning ? this._t("active") : this._t("inactive")}`; }
+    const status = root.getElementById("status");
+    if (status) status.innerHTML = this._statusChip(this._isOn(`${bp}_proxy_actif`));
 
     const mvs = root.querySelectorAll(".mv");
     const metrics = [`${sp}_regles_proxy`, `${sp}_regles_actives`, `${sp}_certificats_tls`, `${sp}_port_entrant`];
     mvs.forEach((el, i) => { if (metrics[i]) el.textContent = this._state(metrics[i]); });
 
     [["ctrl-https", `${bp}_redirection_https`], ["ctrl-port80", `${bp}_ecoute_port_80`], ["ctrl-devmode", `${bp}_mode_developpement`]].forEach(([id, entity]) => {
-      const cs = root.getElementById(id)?.querySelector(".cs");
-      if (cs) { const on = this._isOn(entity); cs.textContent = on ? this._t("on") : this._t("off"); cs.className = `cs ${on ? "on" : "off"}`; }
+      const btn = root.getElementById(id);
+      if (!btn) return;
+      const on = this._isOn(entity);
+      btn.className = `ctrl ${on ? "ok" : "idle"}`;
+      btn.querySelector(".cs").textContent = on ? this._t("on") : this._t("off");
     });
   }
 
-  // ── Render complet ─────────────────────────────────────────────────────────
+  // ── Full render ────────────────────────────────────────────────────────────
 
   _render() {
     if (!this._hass || !this._config) return;
@@ -335,41 +341,47 @@ class ZoraxyCard extends HTMLElement {
     const rules         = this._attr(`${sp}_regles_proxy`, "rules") || [];
     const redirects     = this._attr(`${sp}_regles_proxy`, "redirects") || [];
     const zoraxyUrl     = this._config.zoraxy_url || "";
+    const sub           = zoraxyUrl.replace(/^https?:\/\//, "").replace(/\/$/, "") || "Reverse proxy";
 
     const ctrl = (id, icon, label, on) => `
-      <button class="ctrl" id="${id}">
+      <button class="ctrl ${on ? "ok" : "idle"}" id="${id}">
         ${this._mdi(ZoraxyCard.ICONS[icon])}
         <span class="cl">${label}</span>
-        <span class="cs ${on ? "on" : "off"}">${on ? this._t("on") : this._t("off")}</span>
+        <span class="cs">${on ? this._t("on") : this._t("off")}</span>
       </button>`;
+
+    const metric = (value, label) => `<div class="tile"><div class="mv">${value}</div><div class="ml">${label}</div></div>`;
 
     this.shadowRoot.innerHTML = `
       <style>${ZoraxyCard.CSS}</style>
       <ha-card>
         <div class="header">
-          <a class="title-link" ${zoraxyUrl ? `href="${zoraxyUrl}" target="_blank"` : ""}>
-            ${ZoraxyCard.LOGO}
-            <span>Zoraxy</span>
-          </a>
-          <span class="bs ${proxyRunning ? "ok" : "err"}">${this._dot(proxyRunning)}${proxyRunning ? this._t("active") : this._t("inactive")}</span>
+          ${ZoraxyCard.LOGO}
+          <div class="titles">
+            <a class="name" ${zoraxyUrl ? `href="${zoraxyUrl}" target="_blank" rel="noopener noreferrer"` : ""}>Zoraxy</a>
+            <div class="sub">${sub}</div>
+          </div>
+          <span id="status">${this._statusChip(proxyRunning)}</span>
         </div>
 
-        <div class="metrics">
-          <div class="metric"><div class="mv">${rulesCount}</div><div class="ml">Règles</div></div>
-          <div class="metric"><div class="mv">${activeCount}</div><div class="ml">Actives</div></div>
-          <div class="metric"><div class="mv">${certCount}</div><div class="ml">Certs</div></div>
-          <div class="metric"><div class="mv">${port}</div><div class="ml">Port</div></div>
+        <div class="content">
+          <div class="metrics">
+            ${metric(rulesCount, this._t("rules"))}
+            ${metric(activeCount, this._t("activeRules"))}
+            ${metric(certCount, this._t("certs"))}
+            ${metric(port, this._t("port"))}
+          </div>
+
+          ${this._section("controls", this._t("controls"), ZoraxyCard.ICONS.server, `<div class="controls">
+            ${ctrl("ctrl-https",   "lock",   this._t("httpsRedirect"), httpsRedirect)}
+            ${ctrl("ctrl-port80",  "web",    this._t("port80"),        port80)}
+            ${ctrl("ctrl-devmode", "code",   this._t("devMode"),       devMode)}
+          </div>`)}
+
+          ${this._section("certs",     `${this._t("certsSection")} (${certCount})`,       ZoraxyCard.ICONS.cert,     this._buildCerts(p))}
+          ${this._section("rules",     `${this._t("proxyRules")} (${rules.length})`,   ZoraxyCard.ICONS.router,   this._buildRules(rules))}
+          ${this._section("redirects", `${this._t("redirections")} (${redirects.length})`, ZoraxyCard.ICONS.redirect, this._buildRedirects(redirects))}
         </div>
-
-        ${this._section("controls", this._t("controls"), ZoraxyCard.ICONS.server, `<div class="controls">
-          ${ctrl("ctrl-https",   "lock",   this._t("httpsRedirect"), httpsRedirect)}
-          ${ctrl("ctrl-port80",  "web",    this._t("port80"),        port80)}
-          ${ctrl("ctrl-devmode", "code",   this._t("devMode"),       devMode)}
-        </div>`)}
-
-        ${this._section("certs",     `${this._t("certsSection")} (${certCount})`,       ZoraxyCard.ICONS.cert,     this._buildCerts(p))}
-        ${this._section("rules",     `${this._t("proxyRules")} (${rules.length})`,   ZoraxyCard.ICONS.router,   this._buildRules(rules))}
-        ${this._section("redirects", `${this._t("redirections")} (${redirects.length})`, ZoraxyCard.ICONS.redirect, this._buildRedirects(redirects))}
       </ha-card>`;
 
     // Sections collapse/expand
@@ -390,23 +402,21 @@ class ZoraxyCard extends HTMLElement {
       this.shadowRoot.getElementById(id)?.addEventListener("click", () => this._toggle(entity));
     });
 
-    // Boutons renouvellement
+    // Certificate renewal buttons
     this.shadowRoot.querySelectorAll(".renew-btn").forEach(btn => {
       btn.addEventListener("click", async e => {
         e.stopPropagation();
-        const orig = btn.innerHTML;
-        btn.innerHTML = this._mdi(ZoraxyCard.ICONS.refresh);
-        btn.style.color = "#f59e0b";
+        btn.classList.add("busy");
         btn.disabled = true;
         try {
           await this._pressButton(btn.dataset.entity);
         } finally {
-          setTimeout(() => { btn.innerHTML = orig; btn.style.color = ""; btn.disabled = false; }, 3000);
+          setTimeout(() => { btn.classList.remove("busy"); btn.disabled = false; }, 3000);
         }
       });
     });
 
-    // Liens domaines proxy
+    // Proxy rule domain links
     this.shadowRoot.querySelectorAll(".domain-link").forEach(el => {
       el.addEventListener("click", e => {
         e.stopPropagation();
@@ -414,8 +424,8 @@ class ZoraxyCard extends HTMLElement {
       });
     });
 
-    // Boutons activation/désactivation des règles proxy
-    this.shadowRoot.querySelectorAll(".toggle-rule-btn").forEach(btn => {
+    // Proxy rule enable/disable buttons
+    this.shadowRoot.querySelectorAll(".rule-btn").forEach(btn => {
       btn.addEventListener("click", async e => {
         e.stopPropagation();
         const domain = btn.dataset.ruleDomain;
@@ -483,6 +493,6 @@ if (!customElements.get("zoraxy-card-editor")) {
 if (!customElements.get("zoraxy-card")) {
   customElements.define("zoraxy-card", ZoraxyCard);
   window.customCards = window.customCards || [];
-  window.customCards.push({ type: "zoraxy-card", name: "Zoraxy Dashboard", description: "Dashboard Zoraxy", preview: true });
+  window.customCards.push({ type: "zoraxy-card", name: "Zoraxy Card", description: "Status, controls, certificates and proxy rules of a Zoraxy reverse proxy", preview: true, documentationURL: "https://github.com/juju35/ha-zoraxy" });
   console.info("%c ZORAXY-CARD %c v" + ZORAXY_CARD_VERSION + " ", "color:#bfdbfe;background:#0f172a;font-weight:700", "color:#0f172a;background:#bfdbfe");
 }

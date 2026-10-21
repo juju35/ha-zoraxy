@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.1
+
+### Changes
+- Card sections fold like the other ha-* cards: the chevron turns from right (folded) to down (unfolded), and a click anywhere else on the page folds the sections back to their defaults, as in ha-carburants-france.
+
 ## 1.2.0
 
 ### Changes

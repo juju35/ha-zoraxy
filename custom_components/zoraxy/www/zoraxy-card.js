@@ -14,7 +14,6 @@ class ZoraxyCard extends HTMLElement {
     server:  "M4,1H20A1,1 0 0,1 21,2V6A1,1 0 0,1 20,7H4A1,1 0 0,1 3,6V2A1,1 0 0,1 4,1M4,9H20A1,1 0 0,1 21,10V14A1,1 0 0,1 20,15H4A1,1 0 0,1 3,14V10A1,1 0 0,1 4,9M4,17H20A1,1 0 0,1 21,18V22A1,1 0 0,1 20,23H4A1,1 0 0,1 3,22V18A1,1 0 0,1 4,17M9,5H10V3H9V5M9,13H10V11H9V13M9,21H10V19H9V21M6,3V5H7V3H6M6,11V13H7V11H6M6,19V21H7V19H6Z",
     redirect:"M14,3L17,6H14.5C12,6 10,8 10,10.5V14.5C8.86,14.18 8,13.19 8,12V10.5C8,6.91 10.91,4 14.5,4L17,3.97L14,1M10,21L7,18H9.5C12,18 14,16 14,13.5V9.5C15.14,9.82 16,10.81 16,12V13.5C16,17.09 13.09,20 9.5,20L7,20.03L10,23",
     chevronDown: "M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z",
-    chevronRight:"M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z",
   };
 
   static LOGO = `<svg class="logo" viewBox="0 0 100 100" role="img" aria-label="Zoraxy">
@@ -88,7 +87,8 @@ class ZoraxyCard extends HTMLElement {
     .sec-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 8px; }
     .section-title { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; text-transform: uppercase;
                      letter-spacing: .04em; color: var(--secondary-text-color); }
-    .sec-arrow { color: var(--secondary-text-color); display: flex; }
+    .sec-arrow { color: var(--secondary-text-color); display: flex; transition: transform .2s ease; }
+    .sec-arrow.closed { transform: rotate(-90deg); }
     .controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
     .ctrl { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 6px; border-radius: 10px; cursor: pointer;
             border: none; width: 100%; font-family: inherit; color: var(--primary-text-color);
@@ -119,9 +119,35 @@ class ZoraxyCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
-    this._sectionOpen = { controls: true, certs: false, rules: false, redirects: false };
+    this._sectionOpen = { ...ZoraxyCard.SECTION_DEFAULTS };
     this._rendered = false;
     this._lastRender = 0;
+  }
+
+  static SECTION_DEFAULTS = { controls: true, certs: false, rules: false, redirects: false };
+
+  // A click elsewhere on the page folds the sections back to their defaults (as in ha-carburants-france).
+  // A click, not a pointerdown: folding on press would shift the layout under the pointer before the click.
+  connectedCallback() {
+    this._onOutside ??= (ev) => {
+      if (ev.composedPath().includes(this)) return;
+      for (const [id, open] of Object.entries(ZoraxyCard.SECTION_DEFAULTS)) {
+        if (this._sectionOpen[id] !== open) this._setSection(id, open);
+      }
+    };
+    document.addEventListener("click", this._onOutside, true);
+  }
+
+  disconnectedCallback() {
+    document.removeEventListener("click", this._onOutside, true);
+  }
+
+  _setSection(id, open) {
+    this._sectionOpen[id] = open;
+    const content = this.shadowRoot.querySelector(`.sec-content[data-id="${id}"]`);
+    const arrow = this.shadowRoot.querySelector(`.sec-arrow[data-id="${id}"]`);
+    if (content) content.style.display = open ? "block" : "none";
+    if (arrow) arrow.classList.toggle("closed", !open);
   }
 
   setConfig(config) { this._config = config; }
@@ -235,7 +261,7 @@ class ZoraxyCard extends HTMLElement {
     return `<div class="section">
       <div class="sec-header" data-id="${id}">
         <div class="section-title">${this._mdi(icon)}<span>${title}</span></div>
-        <span class="sec-arrow" data-id="${id}">${this._mdi(open ? ZoraxyCard.ICONS.chevronDown : ZoraxyCard.ICONS.chevronRight)}</span>
+        <span class="sec-arrow${open ? "" : " closed"}" data-id="${id}">${this._mdi(ZoraxyCard.ICONS.chevronDown)}</span>
       </div>
       <div class="sec-content" data-id="${id}" style="display:${open ? "block" : "none"};">${content}</div>
     </div>`;
@@ -386,15 +412,7 @@ class ZoraxyCard extends HTMLElement {
 
     // Sections collapse/expand
     this.shadowRoot.querySelectorAll(".sec-header").forEach(h => {
-      h.addEventListener("click", () => {
-        const id = h.dataset.id;
-        const content = this.shadowRoot.querySelector(`.sec-content[data-id="${id}"]`);
-        const arrow   = this.shadowRoot.querySelector(`.sec-arrow[data-id="${id}"]`);
-        const open    = content.style.display !== "none";
-        content.style.display = open ? "none" : "block";
-        arrow.innerHTML = open ? this._mdi(ZoraxyCard.ICONS.chevronRight) : this._mdi(ZoraxyCard.ICONS.chevronDown);
-        this._sectionOpen[id] = !open;
-      });
+      h.addEventListener("click", () => this._setSection(h.dataset.id, !this._sectionOpen[h.dataset.id]));
     });
 
     // Switches

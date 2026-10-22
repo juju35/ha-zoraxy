@@ -1,13 +1,14 @@
 """Zoraxy sensors."""
+
 from __future__ import annotations
 
 from datetime import datetime
 
-from homeassistant.components.sensor import SensorEntity, SensorStateClass, SensorDeviceClass
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, DEVICE_INFO_BASE, safe_domain
 from . import ZoraxyDataUpdateCoordinator
+from .const import DEVICE_INFO_BASE, DOMAIN, safe_domain
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
@@ -30,7 +31,11 @@ class ZoraxyBaseSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def device_info(self):
-        return {**DEVICE_INFO_BASE, "identifiers": {(DOMAIN, self._entry.entry_id)}, "configuration_url": self._entry.data["host"]}
+        return {
+            **DEVICE_INFO_BASE,
+            "identifiers": {(DOMAIN, self._entry.entry_id)},
+            "configuration_url": self._entry.data["host"],
+        }
 
     def _data(self) -> dict:
         return self.coordinator.data or {}
@@ -50,10 +55,12 @@ class ZoraxyProxyRulesCountSensor(ZoraxyBaseSensor):
     _attr_native_unit_of_measurement = "règles"
 
     @property
-    def unique_id(self): return f"{self._entry.entry_id}_proxy_rules_count"
+    def unique_id(self):
+        return f"{self._entry.entry_id}_proxy_rules_count"
 
     @property
-    def native_value(self): return len(self._proxy_list())
+    def native_value(self):
+        return len(self._proxy_list())
 
     @property
     def extra_state_attributes(self):
@@ -67,7 +74,11 @@ class ZoraxyProxyRulesCountSensor(ZoraxyBaseSensor):
             for r in self._proxy_list()
         ]
         redirects = [
-            {"RedirectURL": r.get("RedirectURL", "?"), "TargetURL": r.get("TargetURL", "?"), "StatusCode": r.get("StatusCode", 307)}
+            {
+                "RedirectURL": r.get("RedirectURL", "?"),
+                "TargetURL": r.get("TargetURL", "?"),
+                "StatusCode": r.get("StatusCode", 307),
+            }
             for r in self._data().get("redirect_list", [])
         ]
         return {"rules": rules, "redirects": redirects}
@@ -80,10 +91,12 @@ class ZoraxyActiveRulesCountSensor(ZoraxyBaseSensor):
     _attr_native_unit_of_measurement = "actives"
 
     @property
-    def unique_id(self): return f"{self._entry.entry_id}_active_rules_count"
+    def unique_id(self):
+        return f"{self._entry.entry_id}_active_rules_count"
 
     @property
-    def native_value(self): return sum(1 for r in self._proxy_list() if not r.get("Disabled", False))
+    def native_value(self):
+        return sum(1 for r in self._proxy_list() if not r.get("Disabled", False))
 
 
 class ZoraxyCertCountSensor(ZoraxyBaseSensor):
@@ -93,15 +106,19 @@ class ZoraxyCertCountSensor(ZoraxyBaseSensor):
     _attr_native_unit_of_measurement = "certificats"
 
     @property
-    def unique_id(self): return f"{self._entry.entry_id}_cert_count"
+    def unique_id(self):
+        return f"{self._entry.entry_id}_cert_count"
 
     @property
-    def native_value(self): return len(self._data().get("cert_list", []))
+    def native_value(self):
+        return len(self._data().get("cert_list", []))
 
     @property
     def extra_state_attributes(self):
         expiry = self._data().get("cert_expiry", {})
-        return {"certificates": [{"domain": d, "expires": expiry.get(d, "?")} for d in self._data().get("cert_list", [])]}
+        return {
+            "certificates": [{"domain": d, "expires": expiry.get(d, "?")} for d in self._data().get("cert_list", [])]
+        }
 
 
 class ZoraxyAccessRulesCountSensor(ZoraxyBaseSensor):
@@ -111,10 +128,12 @@ class ZoraxyAccessRulesCountSensor(ZoraxyBaseSensor):
     _attr_native_unit_of_measurement = "règles"
 
     @property
-    def unique_id(self): return f"{self._entry.entry_id}_access_rules_count"
+    def unique_id(self):
+        return f"{self._entry.entry_id}_access_rules_count"
 
     @property
-    def native_value(self): return len(self._data().get("access_rules", []))
+    def native_value(self):
+        return len(self._data().get("access_rules", []))
 
 
 class ZoraxyInboundPortSensor(ZoraxyBaseSensor):
@@ -122,10 +141,12 @@ class ZoraxyInboundPortSensor(ZoraxyBaseSensor):
     _attr_icon = "mdi:ethernet-cable"
 
     @property
-    def unique_id(self): return f"{self._entry.entry_id}_inbound_port"
+    def unique_id(self):
+        return f"{self._entry.entry_id}_inbound_port"
 
     @property
-    def native_value(self): return self._status_option().get("Port", "?")
+    def native_value(self):
+        return self._status_option().get("Port", "?")
 
 
 class ZoraxyCertExpirySensor(ZoraxyBaseSensor):
@@ -139,10 +160,12 @@ class ZoraxyCertExpirySensor(ZoraxyBaseSensor):
         self._domain = domain_name
 
     @property
-    def unique_id(self): return f"{self._entry.entry_id}_cert_expiry_{safe_domain(self._domain)}"
+    def unique_id(self):
+        return f"{self._entry.entry_id}_cert_expiry_{safe_domain(self._domain)}"
 
     @property
-    def name(self): return f"Zoraxy - Cert {self._domain}"
+    def name(self):
+        return f"Zoraxy - Cert {self._domain}"
 
     @property
     def native_value(self):
@@ -150,9 +173,10 @@ class ZoraxyCertExpirySensor(ZoraxyBaseSensor):
         if not expiry_str:
             return None
         try:
-            return datetime.fromisoformat(expiry_str.replace("Z", "+00:00"))
+            return datetime.fromisoformat(expiry_str)
         except ValueError:
             return None
 
     @property
-    def extra_state_attributes(self): return {"domain": self._domain}
+    def extra_state_attributes(self):
+        return {"domain": self._domain}

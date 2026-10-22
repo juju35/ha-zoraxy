@@ -1,4 +1,5 @@
 """Zoraxy integration for Home Assistant."""
+
 from __future__ import annotations
 
 import asyncio
@@ -10,7 +11,6 @@ from pathlib import Path
 from urllib.parse import urlencode
 
 import aiohttp
-
 from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
@@ -21,11 +21,16 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import DOMAIN, DEFAULT_SCAN_INTERVAL, DEVICE_INFO_BASE, safe_domain
+from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, safe_domain
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.SWITCH, Platform.BUTTON]
+PLATFORMS: list[Platform] = [
+    Platform.SENSOR,
+    Platform.BINARY_SENSOR,
+    Platform.SWITCH,
+    Platform.BUTTON,
+]
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 CSRF_META_RE = re.compile(r'<meta\s+name="zoraxy\.csrf\.Token"\s+content="([^"]+)"')
@@ -41,9 +46,7 @@ LEGACY_CARD_URL = f"/local/{CARD_FILENAME}"
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Serve the Lovelace card from the integration and add it to the dashboard resources."""
-    await hass.http.async_register_static_paths(
-        [StaticPathConfig(FRONTEND_URL, str(CARD_PATH.parent), True)]
-    )
+    await hass.http.async_register_static_paths([StaticPathConfig(FRONTEND_URL, str(CARD_PATH.parent), True)])
     await hass.async_add_executor_job(_remove_legacy_card_file, hass)
     await _async_register_card(hass)
     return True
@@ -66,9 +69,7 @@ async def _async_register_card(hass: HomeAssistant) -> None:
     The file hash in the URL makes browsers fetch the new card after an update. The
     /local/ resource of versions up to 1.2.1 is replaced by the integration's URL.
     """
-    digest = await hass.async_add_executor_job(
-        lambda: hashlib.md5(CARD_PATH.read_bytes()).hexdigest()[:8]
-    )
+    digest = await hass.async_add_executor_job(lambda: hashlib.md5(CARD_PATH.read_bytes()).hexdigest()[:8])
     base_url = f"{FRONTEND_URL}/{CARD_FILENAME}"
     url = f"{base_url}?v={digest}"
 
@@ -156,11 +157,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if current_disabled is None:
             _LOGGER.error("Zoraxy toggle_proxy_rule: domain '%s' not found", domain_name)
             return
-        # enable=None toggles, otherwise the rule is set as asked
-        if enable is None:
-            should_enable = current_disabled  # disabled now → enable
-        else:
-            should_enable = enable
+        # enable=None toggles (enable a disabled rule), otherwise set as asked
+        should_enable = current_disabled if enable is None else enable
         set_value = "true" if should_enable else "false"
         result = await coordinator._fetch(
             "/api/proxy/toggle",
@@ -232,7 +230,7 @@ class ZoraxyDataUpdateCoordinator(DataUpdateCoordinator):
                 return m.group(1)
             _LOGGER.warning("Zoraxy: CSRF token not found in login.html")
         except Exception as err:
-            _LOGGER.error("Zoraxy: could not read the CSRF token: %s", err)
+            _LOGGER.exception("Zoraxy: could not read the CSRF token: %s", err)
         return None
 
     async def _login(self) -> bool:
@@ -268,7 +266,7 @@ class ZoraxyDataUpdateCoordinator(DataUpdateCoordinator):
         except aiohttp.ClientConnectorError as err:
             raise UpdateFailed(f"Cannot reach Zoraxy ({self.host}): {err}") from err
         except Exception as err:
-            _LOGGER.error("Zoraxy: login error: %s", err)
+            _LOGGER.exception("Zoraxy: login error: %s", err)
         self._logged_in = False
         return False
 
@@ -324,7 +322,13 @@ class ZoraxyDataUpdateCoordinator(DataUpdateCoordinator):
             async with asyncio.timeout(120):
                 resp = await self._session.get(
                     f"{self.host}/api/acme/obtainCert",
-                    params={"domains": domain, "filename": domain, "email": self._acme_email, "ca": self._acme_ca, "dns": "false"},
+                    params={
+                        "domains": domain,
+                        "filename": domain,
+                        "email": self._acme_email,
+                        "ca": self._acme_ca,
+                        "dns": "false",
+                    },
                     headers={"X-CSRF-Token": self._csrf_token or ""},
                     allow_redirects=True,
                 )
@@ -332,7 +336,7 @@ class ZoraxyDataUpdateCoordinator(DataUpdateCoordinator):
             _LOGGER.info("Zoraxy: renewal of %s → %s", domain, text[:100])
             return resp.status == 200 and "error" not in text.lower()
         except Exception as err:
-            _LOGGER.error("Zoraxy: renewal of %s failed: %s", domain, err)
+            _LOGGER.exception("Zoraxy: renewal of %s failed: %s", domain, err)
             return False
 
     def _extract_cert_expiry(self, proxy_status: dict) -> dict[str, str]:
@@ -380,10 +384,10 @@ class ZoraxyDataUpdateCoordinator(DataUpdateCoordinator):
             proxy_list.extend(root_rules)
 
         return {
-            "proxy_status":  proxy_status or {},
-            "proxy_list":    proxy_list,
-            "cert_list":     cert_list if isinstance(cert_list, list) else [],
+            "proxy_status": proxy_status or {},
+            "proxy_list": proxy_list,
+            "cert_list": cert_list if isinstance(cert_list, list) else [],
             "redirect_list": redirect_list if isinstance(redirect_list, list) else [],
-            "access_rules":  access_rules if isinstance(access_rules, list) else [],
-            "cert_expiry":   self._extract_cert_expiry(proxy_status or {}),
+            "access_rules": access_rules if isinstance(access_rules, list) else [],
+            "cert_expiry": self._extract_cert_expiry(proxy_status or {}),
         }

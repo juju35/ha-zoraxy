@@ -241,7 +241,7 @@ class ZoraxyCard extends HTMLElement {
 
   _daysUntil(dateStr) {
     if (!dateStr || dateStr === "unavailable" || dateStr === "unknown") return null;
-    try { return Math.floor((new Date(dateStr) - new Date()) / 86400000); } catch { return null; }
+    try { return Math.floor((new Date(dateStr) - Date.now()) / 86400000); } catch { return null; }
   }
 
   _mdi(path) {
@@ -481,8 +481,8 @@ class ZoraxyCardEditor extends HTMLElement {
       const t = (key) => ZoraxyCard.I18N[lang][key];
       this._form = document.createElement("ha-form");
       this._form.schema = ZORAXY_EDITOR_SCHEMA;
-      this._form.computeLabel = (field) => t("ed_" + field.name) || field.name;
-      this._form.computeHelper = (field) => t("ed_" + field.name + "_helper");
+      this._form.computeLabel = (field) => t(`ed_${field.name}`) || field.name;
+      this._form.computeHelper = (field) => t(`ed_${field.name}_helper`);
       this._form.addEventListener("value-changed", this._valueChanged.bind(this));
       this.appendChild(this._form);
     }
@@ -512,5 +512,5 @@ if (!customElements.get("zoraxy-card")) {
   customElements.define("zoraxy-card", ZoraxyCard);
   window.customCards = window.customCards || [];
   window.customCards.push({ type: "zoraxy-card", name: "Zoraxy Card", description: "Status, controls, certificates and proxy rules of a Zoraxy reverse proxy", preview: true, documentationURL: "https://github.com/juju35/ha-zoraxy" });
-  console.info("%c ZORAXY-CARD %c v" + ZORAXY_CARD_VERSION + " ", "color:#bfdbfe;background:#0f172a;font-weight:700", "color:#0f172a;background:#bfdbfe");
+  console.info(`%c ZORAXY-CARD %c v${ZORAXY_CARD_VERSION} `, "color:#bfdbfe;background:#0f172a;font-weight:700", "color:#0f172a;background:#bfdbfe");
 }

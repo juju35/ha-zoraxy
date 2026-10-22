@@ -230,7 +230,7 @@ class ZoraxyDataUpdateCoordinator(DataUpdateCoordinator):
                 return m.group(1)
             _LOGGER.warning("Zoraxy: CSRF token not found in login.html")
         except Exception as err:
-            _LOGGER.error("Zoraxy: could not read the CSRF token: %s", err)
+            _LOGGER.exception("Zoraxy: could not read the CSRF token: %s", err)
         return None
 
     async def _login(self) -> bool:
@@ -266,7 +266,7 @@ class ZoraxyDataUpdateCoordinator(DataUpdateCoordinator):
         except aiohttp.ClientConnectorError as err:
             raise UpdateFailed(f"Cannot reach Zoraxy ({self.host}): {err}") from err
         except Exception as err:
-            _LOGGER.error("Zoraxy: login error: %s", err)
+            _LOGGER.exception("Zoraxy: login error: %s", err)
         self._logged_in = False
         return False
 
@@ -336,7 +336,7 @@ class ZoraxyDataUpdateCoordinator(DataUpdateCoordinator):
             _LOGGER.info("Zoraxy: renewal of %s → %s", domain, text[:100])
             return resp.status == 200 and "error" not in text.lower()
         except Exception as err:
-            _LOGGER.error("Zoraxy: renewal of %s failed: %s", domain, err)
+            _LOGGER.exception("Zoraxy: renewal of %s failed: %s", domain, err)
             return False
 
     def _extract_cert_expiry(self, proxy_status: dict) -> dict[str, str]:

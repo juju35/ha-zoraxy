@@ -173,7 +173,7 @@ class ZoraxyCertExpirySensor(ZoraxyBaseSensor):
         if not expiry_str:
             return None
         try:
-            return datetime.fromisoformat(expiry_str.replace("Z", "+00:00"))
+            return datetime.fromisoformat(expiry_str)
         except ValueError:
             return None
 

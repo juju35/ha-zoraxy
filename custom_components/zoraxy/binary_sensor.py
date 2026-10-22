@@ -141,7 +141,7 @@ class ZoraxyCertExpiringBinarySensor(ZoraxyBaseBinarySensor):
         if not expiry_str:
             return None
         try:
-            expiry = datetime.fromisoformat(expiry_str.replace("Z", "+00:00"))
+            expiry = datetime.fromisoformat(expiry_str)
             return expiry < datetime.now(UTC) + timedelta(days=EXPIRY_WARNING_DAYS)
         except ValueError:
             return None

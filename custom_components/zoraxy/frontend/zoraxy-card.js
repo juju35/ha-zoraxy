@@ -1,4 +1,4 @@
-const ZORAXY_CARD_VERSION = '1.3.1';
+const ZORAXY_CARD_VERSION = '1.4.0';
 
 class ZoraxyCard extends HTMLElement {
 
@@ -68,41 +68,41 @@ class ZoraxyCard extends HTMLElement {
     ha-card { overflow: hidden; }
     .icon { width: 18px; height: 18px; fill: currentColor; flex: none; }
     .ok { --c: var(--zx-ok); } .warn { --c: var(--zx-warn); } .crit { --c: var(--zx-crit); } .idle { --c: var(--secondary-text-color); }
-    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c, var(--zx-ok)); flex: none; display: inline-block; }
-    .chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 500;
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--c, var(--zx-ok)); flex: none; display: inline-block; }
+    .chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 12px; font-size: 11px; font-weight: 500;
             background: color-mix(in srgb, var(--c, var(--zx-ok)) 15%, transparent); color: var(--c, var(--zx-ok)); white-space: nowrap; }
-    .header { display: flex; align-items: center; gap: 12px; padding: 16px 16px 8px; }
-    .logo { width: 40px; height: 40px; flex: none; }
+    .header { display: flex; align-items: center; gap: 10px; padding: 12px 12px 4px; }
+    .logo { width: 36px; height: 36px; flex: none; }
     .titles { flex: 1; min-width: 0; }
-    .name { font-size: 18px; font-weight: 500; line-height: 1.25; color: var(--primary-text-color); text-decoration: none;
+    .name { font-size: 16px; font-weight: 500; line-height: 1.25; color: var(--primary-text-color); text-decoration: none;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
     a.name:hover { text-decoration: underline; }
-    .sub { font-size: 13px; color: var(--secondary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .content { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 16px; }
-    .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 8px; }
-    .tile { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 10px; border-radius: 10px; min-width: 0;
+    .sub { font-size: 12px; color: var(--secondary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .content { padding: 0 12px 12px; display: flex; flex-direction: column; gap: 12px; }
+    .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 6px; }
+    .tile { display: flex; flex-direction: column; align-items: center; gap: 0; padding: 6px 8px; border-radius: 10px; min-width: 0;
             background: var(--secondary-background-color, rgba(127,127,127,.08)); }
-    .mv { font-size: 18px; font-weight: 500; color: var(--primary-text-color); }
-    .ml { font-size: 12px; color: var(--secondary-text-color); }
+    .mv { font-size: 16px; font-weight: 500; color: var(--primary-text-color); }
+    .ml { font-size: 11px; color: var(--secondary-text-color); }
     .sec-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 8px; }
-    .section-title { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; text-transform: uppercase;
+    .section-title { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; text-transform: uppercase;
                      letter-spacing: .04em; color: var(--secondary-text-color); }
     .sec-arrow { color: var(--secondary-text-color); display: flex; transition: transform .2s ease; }
     .sec-arrow.closed { transform: rotate(-90deg); }
-    .controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-    .ctrl { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 6px; border-radius: 10px; cursor: pointer;
+    .controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .ctrl { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 4px; border-radius: 10px; cursor: pointer;
             border: none; width: 100%; font-family: inherit; color: var(--primary-text-color);
             background: var(--secondary-background-color, rgba(127,127,127,.08)); transition: background .15s; }
     .ctrl .icon { color: var(--c, var(--secondary-text-color)); }
     .ctrl:hover { background: color-mix(in srgb, var(--zx-accent) 15%, var(--secondary-background-color, transparent)); }
-    .cl { font-size: 12px; color: var(--secondary-text-color); text-align: center; }
-    .cs { font-size: 12px; font-weight: 500; color: var(--c); }
-    .row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; gap: 8px; font-size: 14px; }
+    .cl { font-size: 11px; color: var(--secondary-text-color); text-align: center; }
+    .cs { font-size: 11px; font-weight: 500; color: var(--c); }
+    .row { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; gap: 8px; font-size: 13px; }
     .row + .row { border-top: 1px solid var(--divider-color); }
     .row-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
     .row-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
     .row-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .row-sub { font-size: 12px; color: var(--secondary-text-color); max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .row-sub { font-size: 11px; color: var(--secondary-text-color); max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .domain-link { cursor: pointer; }
     .domain-link:hover { text-decoration: underline; }
     .empty { color: var(--secondary-text-color); font-size: 13px; padding: 4px 0; margin: 0; }

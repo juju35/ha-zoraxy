@@ -31,7 +31,7 @@ custom_components/zoraxy/
 
 Zoraxy v3.3.2 uses **gorilla/csrf** protection. Login flow:
 
-1. `GET /login.html` (follow redirects) → receives `zoraxy_csrf` cookie + extracts CSRF token from `<meta name="zoraxy.csrf.Token" content="...">` 
+1. `GET /login.html` (follow redirects) → receives `zoraxy_csrf` cookie + extracts CSRF token from `<meta name="zoraxy.csrf.Token" content="...">`
 2. `POST /api/auth/login` with:
    - Header: `X-CSRF-Token: <meta token>`
    - Header: `Content-Type: application/x-www-form-urlencoded`

@@ -56,25 +56,31 @@ RULES = [
     {"domain": "photos.example.org", "target": "192.168.1.20:2342", "enabled": False},
 ]
 REDIRECTS = [{"RedirectURL": "example.org", "TargetURL": "https://www.example.org", "StatusCode": 301}]
-CERTS = {"ha_example_org": "2026-12-31T00:00:00Z", "nas_example_org": "2026-11-08T00:00:00Z", "photos_example_org": "2026-10-24T00:00:00Z"}
+CERTS = {
+    "ha_example_org": "2026-12-31T00:00:00Z",
+    "nas_example_org": "2026-11-08T00:00:00Z",
+    "photos_example_org": "2026-10-24T00:00:00Z",
+}
 
 
 def state(entity_id, value, **attributes):
     return entity_id, {"entity_id": entity_id, "state": value, "attributes": attributes}
 
 
-STATES = dict([
-    state(f"binary_sensor.{P}_proxy_actif", "on"),
-    state(f"binary_sensor.{P}_redirection_https", "on"),
-    state(f"binary_sensor.{P}_ecoute_port_80", "on"),
-    state(f"binary_sensor.{P}_mode_developpement", "off"),
-    state(f"sensor.{P}_regles_proxy", str(len(RULES)), rules=RULES, redirects=REDIRECTS),
-    state(f"sensor.{P}_regles_actives", "2"),
-    state(f"sensor.{P}_certificats_tls", str(len(CERTS))),
-    state(f"sensor.{P}_port_entrant", "443"),
-    *[state(f"sensor.{P}_cert_{k}", v, domain=k.replace("_", ".")) for k, v in CERTS.items()],
-    *[state(f"binary_sensor.{P}_cert_expirant_{k}", "on" if k.startswith("photos") else "off") for k in CERTS],
-])
+STATES = dict(
+    [
+        state(f"binary_sensor.{P}_proxy_actif", "on"),
+        state(f"binary_sensor.{P}_redirection_https", "on"),
+        state(f"binary_sensor.{P}_ecoute_port_80", "on"),
+        state(f"binary_sensor.{P}_mode_developpement", "off"),
+        state(f"sensor.{P}_regles_proxy", str(len(RULES)), rules=RULES, redirects=REDIRECTS),
+        state(f"sensor.{P}_regles_actives", "2"),
+        state(f"sensor.{P}_certificats_tls", str(len(CERTS))),
+        state(f"sensor.{P}_port_entrant", "443"),
+        *[state(f"sensor.{P}_cert_{k}", v, domain=k.replace("_", ".")) for k, v in CERTS.items()],
+        *[state(f"binary_sensor.{P}_cert_expirant_{k}", "on" if k.startswith("photos") else "off") for k in CERTS],
+    ]
+)
 
 SHOTS = [
     {"file": "card", "theme": "light", "lang": "en", "open": ["certs"]},
@@ -96,7 +102,11 @@ def main():
     out_dir.mkdir(exist_ok=True)
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        context = browser.new_context(device_scale_factor=2, viewport={"width": 1000, "height": 2400}, timezone_id="Europe/Paris")
+        context = browser.new_context(
+            device_scale_factor=2,
+            viewport={"width": 1000, "height": 2400},
+            timezone_id="Europe/Paris",
+        )
         page = context.new_page()
         page.clock.set_fixed_time(NOW)
         for shot in SHOTS:
@@ -114,8 +124,8 @@ def main():
                 {"states": STATES, "lang": shot["lang"], "open": shot["open"]},
             )
             page.wait_for_timeout(300)
-            page.locator("zoraxy-card").screenshot(path=str(out_dir / f'{shot["file"]}.png'), animations="disabled")
-            print(f'screenshots/{shot["file"]}.png')
+            page.locator("zoraxy-card").screenshot(path=str(out_dir / f"{shot['file']}.png"), animations="disabled")
+            print(f"screenshots/{shot['file']}.png")
         browser.close()
 
 

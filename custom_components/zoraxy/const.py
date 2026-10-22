@@ -2,7 +2,7 @@
 
 DOMAIN = "zoraxy"
 DEFAULT_SCAN_INTERVAL = 30  # seconds
-EXPIRY_WARNING_DAYS = 30    # days before expiry that trigger the warning
+EXPIRY_WARNING_DAYS = 30  # days before expiry that trigger the warning
 
 DEVICE_INFO_BASE = {
     "name": "Zoraxy Reverse Proxy",

@@ -1,4 +1,5 @@
 """Config flow for the Zoraxy integration."""
+
 from __future__ import annotations
 
 import asyncio
@@ -7,24 +8,26 @@ from urllib.parse import urlencode
 
 import aiohttp
 import voluptuous as vol
-
 from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResult
 
-from .const import DOMAIN, DEFAULT_SCAN_INTERVAL
+from .const import DEFAULT_SCAN_INTERVAL, DOMAIN
 
 CSRF_META_RE = re.compile(r'<meta\s+name="zoraxy\.csrf\.Token"\s+content="([^"]+)"')
 
-STEP_USER_DATA_SCHEMA = vol.Schema({
-    vol.Required("host", default="http://192.168.1.253:8000"): str,
-    vol.Required("username", default="admin"): str,
-    vol.Required("password"): str,
-    vol.Optional("scan_interval", default=DEFAULT_SCAN_INTERVAL): int,
-})
+STEP_USER_DATA_SCHEMA = vol.Schema(
+    {
+        vol.Required("host", default="http://192.168.1.253:8000"): str,
+        vol.Required("username", default="admin"): str,
+        vol.Required("password"): str,
+        vol.Optional("scan_interval", default=DEFAULT_SCAN_INTERVAL): int,
+    }
+)
 
 
 class CannotConnect(Exception):
     pass
+
 
 class InvalidAuth(Exception):
     pass
@@ -44,7 +47,10 @@ async def _test_login(host: str, username: str, password: str) -> None:
             async with asyncio.timeout(10):
                 resp = await session.post(
                     f"{host.rstrip('/')}/api/auth/login",
-                    headers={"X-CSRF-Token": m.group(1), "Content-Type": "application/x-www-form-urlencoded"},
+                    headers={
+                        "X-CSRF-Token": m.group(1),
+                        "Content-Type": "application/x-www-form-urlencoded",
+                    },
                     data=urlencode({"username": username, "password": password}),
                 )
             text = await resp.text()

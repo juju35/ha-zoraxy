@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.4.1
+
+### Maintenance
+- Tooling only, no functional change: ruff/Biome/pre-commit, a Lint CI with duplication and dead-code checks, and internal modernizations.
+
 ## 1.4.0
 
 ### Changes

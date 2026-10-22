@@ -1,4 +1,4 @@
-const ZORAXY_CARD_VERSION = '1.4.0';
+const ZORAXY_CARD_VERSION = '1.4.1';
 
 class ZoraxyCard extends HTMLElement {
 

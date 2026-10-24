@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.6.0
+
+### Changes
+- Requires Home Assistant 2024.12 or later.
+- The TLS certificate is checked, with a new **Verify the TLS certificate** option, on by default for new entries. Existing entries are migrated with it off, as before, so an HTTPS Zoraxy with a self-signed certificate keeps working: turn it on in **Configure** if your certificate is valid.
+- **Configure** on the integration sets the refresh interval (10 s minimum) and the TLS verification. When Zoraxy refuses the password, Home Assistant asks for the new one.
+- The entities become unavailable when Zoraxy's status cannot be read, instead of showing the proxy as stopped.
+- `zoraxy.toggle_proxy_rule`: `enable` is optional (the rule is toggled when it is left out), and an unknown domain or a Zoraxy error now fails the action, so the card undoes its change.
+- Card: section headers and domain links work with the keyboard (Enter, Space), and an invalid configuration shows an error on the card.
+
+### Fixes
+- The HTTPS redirect, port 80 and development mode switches show their real state and can be turned on and off: they always showed off, and the HTTPS redirect and development mode changes were ignored by Zoraxy.
+- `zoraxy.toggle_proxy_rule` works again after the integration is reloaded.
+- Card: rule domains, targets, redirects and certificate names are escaped, and `zoraxy_url` becomes a link only for an `http(s)://` address.
+- Certificate entities are no longer deleted when the certificate list cannot be read once. The README now says to reload the integration after adding a certificate in Zoraxy.
+- **Renew** logs in again when the session has expired, and reports a failure instead of only logging it.
+- Requests that see an expired session together log in only once, and no connection is left open when the setup fails.
+- The card redraws only when its entities change instead of every 15 s, and its height follows the open sections.
+
+### Maintenance
+- Test suite (pytest) with a test job in CI; shared `ZoraxyClient` for the coordinator and the config flow, coordinator stored on the entry.
+- CI hardening: actions pinned by commit SHA, read-only token, Dependabot for actions, duplication check with PR annotations.
+
 ## 1.5.0
 
 ### Changes

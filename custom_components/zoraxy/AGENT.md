@@ -15,9 +15,9 @@ custom_components/zoraxy/
 ├── button.py            # Buttons (ACME certificate renewal per domain)
 ├── config_flow.py       # UI config flow (host, username, password, interval)
 ├── const.py             # Constants, safe_domain(), DEVICE_INFO_BASE
+├── entity.py            # ZoraxyEntity base: device, translated name, entity id kept from 1.4.x
 ├── manifest.json        # HA integration manifest
-├── strings.json         # FR strings (default)
-├── icons.json           # MDI icon mapping per entity
+├── icons.json           # MDI icon per translation key
 ├── translations/
 │   ├── fr.json          # French translations
 │   └── en.json          # English translations
@@ -75,6 +75,8 @@ Zoraxy v3.3.2 uses **gorilla/csrf** protection. Login flow:
 
 ## Entity Patterns
 
+Entities use `has_entity_name` and a `translation_key` (names in `translations/en.json` and `fr.json`, icons in `icons.json`). Their suggested entity id is built from the French name they had up to 1.4.x (`_legacy_name`, e.g. `sensor.zoraxy_reverse_proxy_zoraxy_regles_proxy`), which is what the card looks for.
+
 Dynamic entities are created per certificate (from `/api/cert/list`):
 - `sensor.zoraxy_*_cert_{safe_domain}` — expiry timestamp
 - `binary_sensor.zoraxy_*_cert_expirant_{safe_domain}` — expires within 30 days
@@ -95,7 +97,7 @@ Served by the integration at `/zoraxy/zoraxy-card.js` (`async_setup` registers t
 Web component `<zoraxy-card>`. Key design decisions:
 - **Throttled render**: full DOM rebuild max every 15s; lightweight `_updateValues()` in between to avoid collapsing open sections
 - **Section state**: `_sectionOpen` dict persists open/closed state across renders
-- **Auto-prefix detection**: finds `sensor.*_certificats_tls` to derive entity prefix (e.g. `zoraxy_reverse_proxy_zoraxy`)
+- **Entity prefix**: `entity_prefix` option, default `zoraxy_reverse_proxy_zoraxy`
 - **I18N**: `static I18N = {fr: {...}, en: {...}}` + `_t(key)` via `hass.locale.language`
 - **Static assets**: `ICONS`, `LOGO`, `BADGE_COLORS`, `CSS` are static class properties (created once)
 

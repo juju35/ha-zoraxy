@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.5.0
+
+### Changes
+- Entity names are translated (English or French, following Home Assistant) and shown under the Zoraxy Reverse Proxy device: *Proxy running* / *Proxy actif* instead of *Zoraxy - Proxy actif*. Names set by hand in Home Assistant are kept.
+- Entity ids do not change. On a new install they now start with `zoraxy_reverse_proxy_zoraxy_`, the card's default `entity_prefix`, so the card works without setting it.
+- Icons come from `icons.json`; the proxy icon turns off when the proxy is down.
+
+### Maintenance
+- Shared `ZoraxyEntity` base class (`entity.py`), `integration_type: hub` in the manifest.
+- Removed the unused `icon.png`, `images/` and `strings.json` from the integration folder (the icons are in `brand/`, the texts in `translations/`).
+
 ## 1.4.1
 
 ### Maintenance

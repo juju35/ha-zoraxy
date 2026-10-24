@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from homeassistant.components.switch import SwitchEntity
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import ZoraxyDataUpdateCoordinator
-from .const import DEVICE_INFO_BASE, DOMAIN
+from .const import DOMAIN
+from .entity import ZoraxyEntity
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
@@ -20,22 +20,12 @@ async def async_setup_entry(hass, entry, async_add_entities):
     )
 
 
-class ZoraxyBaseSwitch(CoordinatorEntity, SwitchEntity):
-    def __init__(self, coordinator: ZoraxyDataUpdateCoordinator, entry):
-        super().__init__(coordinator)
-        self._entry = entry
-
-    @property
-    def device_info(self):
-        return {
-            **DEVICE_INFO_BASE,
-            "identifiers": {(DOMAIN, self._entry.entry_id)},
-            "configuration_url": self._entry.data["host"],
-        }
+class ZoraxyBaseSwitch(ZoraxyEntity, SwitchEntity):
+    _platform = "switch"
 
     def _bool_val(self, key: str) -> bool:
         """Read a boolean from the coordinator data."""
-        val = (self.coordinator.data or {}).get(key)
+        val = self._data().get(key)
         return val.get("enabled", val.get("value", False)) if isinstance(val, dict) else bool(val)
 
     async def _set(self, endpoint: str, enable: bool) -> None:
@@ -44,8 +34,8 @@ class ZoraxyBaseSwitch(CoordinatorEntity, SwitchEntity):
 
 
 class ZoraxyHttpsRedirectSwitch(ZoraxyBaseSwitch):
-    _attr_name = "Zoraxy - Redirection HTTPS"
-    _attr_icon = "mdi:lock-check"
+    _attr_translation_key = "https_redirect"
+    _legacy_name = "Zoraxy - Redirection HTTPS"
 
     @property
     def unique_id(self):
@@ -63,8 +53,8 @@ class ZoraxyHttpsRedirectSwitch(ZoraxyBaseSwitch):
 
 
 class ZoraxyPort80Switch(ZoraxyBaseSwitch):
-    _attr_name = "Zoraxy - Écoute port 80"
-    _attr_icon = "mdi:web"
+    _attr_translation_key = "port_80"
+    _legacy_name = "Zoraxy - Écoute port 80"
 
     @property
     def unique_id(self):
@@ -82,8 +72,8 @@ class ZoraxyPort80Switch(ZoraxyBaseSwitch):
 
 
 class ZoraxyDevModeSwitch(ZoraxyBaseSwitch):
-    _attr_name = "Zoraxy - Mode développement"
-    _attr_icon = "mdi:code-braces"
+    _attr_translation_key = "development_mode"
+    _legacy_name = "Zoraxy - Mode développement"
 
     @property
     def unique_id(self):

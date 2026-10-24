@@ -22,23 +22,60 @@
   },
   "entity": {
     "sensor": {
-      "zoraxy_regles_proxy": { "name": "Proxy rules" },
-      "zoraxy_regles_actives": { "name": "Active rules" },
-      "zoraxy_certificats_tls": { "name": "TLS certificates" },
-      "zoraxy_regles_d_acces": { "name": "Access rules" },
-      "zoraxy_port_entrant": { "name": "Inbound port" }
+      "proxy_rules": {
+        "name": "Proxy rules"
+      },
+      "active_rules": {
+        "name": "Active rules"
+      },
+      "tls_certificates": {
+        "name": "TLS certificates"
+      },
+      "access_rules": {
+        "name": "Access rules"
+      },
+      "inbound_port": {
+        "name": "Inbound port"
+      },
+      "certificate": {
+        "name": "{domain} certificate"
+      }
     },
     "binary_sensor": {
-      "zoraxy_proxy_actif": { "name": "Proxy running" },
-      "zoraxy_tls_active": { "name": "TLS enabled" },
-      "zoraxy_redirection_https": { "name": "HTTPS redirect" },
-      "zoraxy_ecoute_port_80": { "name": "Port 80 listener" },
-      "zoraxy_mode_developpement": { "name": "Development mode" }
+      "proxy_running": {
+        "name": "Proxy running"
+      },
+      "tls_enabled": {
+        "name": "TLS enabled"
+      },
+      "https_redirect": {
+        "name": "HTTPS redirect"
+      },
+      "port_80": {
+        "name": "Port 80 listener"
+      },
+      "development_mode": {
+        "name": "Development mode"
+      },
+      "certificate_expiring": {
+        "name": "{domain} certificate expiring"
+      }
     },
     "switch": {
-      "zoraxy_redirection_https": { "name": "HTTPS redirect" },
-      "zoraxy_ecoute_port_80": { "name": "Port 80 listener" },
-      "zoraxy_mode_developpement": { "name": "Development mode" }
+      "https_redirect": {
+        "name": "HTTPS redirect"
+      },
+      "port_80": {
+        "name": "Port 80 listener"
+      },
+      "development_mode": {
+        "name": "Development mode"
+      }
+    },
+    "button": {
+      "renew": {
+        "name": "Renew {domain}"
+      }
     }
   }
 }

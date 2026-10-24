@@ -1,24 +1,27 @@
 {
   "entity": {
     "sensor": {
-      "zoraxy_regles_proxy":    { "default": "mdi:router-network" },
-      "zoraxy_regles_actives":  { "default": "mdi:check-network" },
-      "zoraxy_certificats_tls": { "default": "mdi:certificate" },
-      "zoraxy_regles_d_acces":  { "default": "mdi:shield-account" },
-      "zoraxy_port_entrant":    { "default": "mdi:ethernet-cable" }
+      "proxy_rules": { "default": "mdi:router-network" },
+      "active_rules": { "default": "mdi:check-network" },
+      "tls_certificates": { "default": "mdi:certificate" },
+      "access_rules": { "default": "mdi:shield-account" },
+      "inbound_port": { "default": "mdi:ethernet-cable" },
+      "certificate": { "default": "mdi:certificate-outline" }
     },
     "binary_sensor": {
-      "zoraxy_proxy_actif":         { "default": "mdi:server-network", "state": { "true": "mdi:server-network", "false": "mdi:server-network-off" } },
-      "zoraxy_tls_active":          { "default": "mdi:shield-lock" },
-      "zoraxy_redirection_https":   { "default": "mdi:lock-check" },
-      "zoraxy_ecoute_port_80":      { "default": "mdi:web" },
-      "zoraxy_mode_developpement":  { "default": "mdi:code-braces" }
+      "proxy_running": { "default": "mdi:server-network", "state": { "on": "mdi:server-network", "off": "mdi:server-network-off" } },
+      "tls_enabled": { "default": "mdi:shield-lock" },
+      "https_redirect": { "default": "mdi:lock-check" },
+      "port_80": { "default": "mdi:web" },
+      "development_mode": { "default": "mdi:code-braces" }
     },
     "switch": {
-      "zoraxy_redirection_https":   { "default": "mdi:lock-check" },
-      "zoraxy_ecoute_port_80":      { "default": "mdi:web" },
-      "zoraxy_mode_developpement":  { "default": "mdi:code-braces" }
+      "https_redirect": { "default": "mdi:lock-check" },
+      "port_80": { "default": "mdi:web" },
+      "development_mode": { "default": "mdi:code-braces" }
     },
-    "button": {}
+    "button": {
+      "renew": { "default": "mdi:certificate-outline" }
+    }
   }
 }

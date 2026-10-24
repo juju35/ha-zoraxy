@@ -408,9 +408,62 @@ async def test_reauth_flow(hass, aioclient_mock, entry):
     result = await entry.start_reauth_flow(hass)
     assert result["step_id"] == "reauth_confirm"
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {"password": "new"})
+    await hass.async_block_till_done()
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "reauth_successful"
     assert entry.data["password"] == "new"
+
+
+async def test_reauth_reloads_once(hass, aioclient_mock, entry):
+    """A reauth reloads the entry once (the update listener), not twice."""
+    from custom_components import zoraxy
+
+    mock_zoraxy(aioclient_mock)
+    await _setup(hass, entry)
+    result = await entry.start_reauth_flow(hass)
+    with patch("custom_components.zoraxy.async_setup_entry", wraps=zoraxy.async_setup_entry) as setup_entry:
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], {"password": "new"})
+        await hass.async_block_till_done()
+    assert result["reason"] == "reauth_successful"
+    assert setup_entry.call_count == 1
+    assert entry.state is ConfigEntryState.LOADED
+
+
+async def test_reauth_after_failed_setup_reloads(hass, aioclient_mock, entry):
+    """When the setup failed on the password, there is no update listener: the reauth reloads the entry itself."""
+    aioclient_mock.get(f"{HOST}/login.html", text=LOGIN_PAGE)
+    aioclient_mock.post(f"{HOST}/api/auth/login", text='{"error":"Invalid username or password"}')
+    await _setup(hass, entry)
+    assert entry.state is ConfigEntryState.SETUP_ERROR
+    flow = next(f for f in hass.config_entries.flow.async_progress() if f["context"]["source"] == "reauth")
+    aioclient_mock.clear_requests()
+    mock_zoraxy(aioclient_mock)
+    with patch("custom_components.zoraxy.config_flow._validate", return_value=None):
+        result = await hass.config_entries.flow.async_configure(flow["flow_id"], {"password": "new"})
+    await hass.async_block_till_done()
+    assert result["reason"] == "reauth_successful"
+    assert entry.state is ConfigEntryState.LOADED
+
+
+async def test_reauth_with_same_password_reloads(hass, aioclient_mock, entry):
+    """An unchanged password does not fire the update listener: the reauth still reloads the entry once."""
+    mock_zoraxy(aioclient_mock)
+    await _setup(hass, entry)
+    result = await entry.start_reauth_flow(hass)
+    with patch("custom_components.zoraxy.async_setup_entry", return_value=True) as setup_entry:
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], {"password": "secret"})
+        await hass.async_block_till_done()
+    assert result["reason"] == "reauth_successful"
+    assert setup_entry.call_count == 1
+
+
+async def test_polling_skips_root_rule_request(hass, aioclient_mock, entry):
+    """Zoraxy answers type=root with a single object, never a list: the request was wasted at each poll."""
+    mock_zoraxy(aioclient_mock)
+    await _setup(hass, entry)
+    fields = [str(call[2]) for call in _calls(aioclient_mock, "/api/proxy/list")]
+    assert fields and all("type=host" in f for f in fields)
+    assert hass.states.get(f"sensor.{P}_regles_proxy").state == "1"
 
 
 async def test_migration_keeps_tls_unchecked(hass, aioclient_mock):

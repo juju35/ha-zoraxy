@@ -63,6 +63,7 @@ Zoraxy v3.3.2 uses **gorilla/csrf** protection. Login flow:
 ### Config entry
 - Version 1.2: `verify_ssl` (new entries: true; entries migrated from 1.1: false, as the TLS certificate was never checked before), unique id = `normalize_host(host)`
 - Options override the data: `scan_interval` (10 s minimum), `verify_ssl`; changing them reloads the entry
+- Reauth stores the new password and lets the update listener reload the entry (it reloads it itself only when that listener is not registered, e.g. the setup failed, or nothing changed)
 - `toggle_proxy_rule` is registered in `async_setup` and resolves the coordinator at each call (the one whose `proxy_list` has the domain); raises `ServiceValidationError` / `HomeAssistantError`, which the card's optimistic rollback relies on
 
 ## API Endpoints Used
@@ -71,7 +72,7 @@ Zoraxy v3.3.2 uses **gorilla/csrf** protection. Login flow:
 |----------|--------|-------|
 | `/api/auth/login` | POST | Login with CSRF token |
 | `/api/proxy/status` | GET | Proxy config, TLS certs (LoadedCerts), port |
-| `/api/proxy/list` | POST | `type=host` or `type=root` — proxy rules |
+| `/api/proxy/list` | POST | `type=host` — proxy rules (`type=root` returns the root object alone, so it is not polled) |
 | `/api/cert/list` | GET | List of certificate domain names |
 | `/api/redirect/list` | GET | HTTP redirections |
 | `/api/access/list` | GET | Access control rules |

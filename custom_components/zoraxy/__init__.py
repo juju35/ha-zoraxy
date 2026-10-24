@@ -314,11 +314,9 @@ class ZoraxyDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             proxy_status = await self.client.fetch_json("/api/proxy/status")
             if not isinstance(proxy_status, dict):
                 raise UpdateFailed("Unexpected proxy status from Zoraxy")
-            host_rules, root_rules = await asyncio.gather(
+            # type=root answers the root object alone (zsrc/rp.go), not a rule list: only host rules are listed.
+            host_rules, cert_list, redirect_list, access_rules, acme_email, acme_ca = await asyncio.gather(
                 self._optional("/api/proxy/list", method="POST", fields={"type": "host"}),
-                self._optional("/api/proxy/list", method="POST", fields={"type": "root"}),
-            )
-            cert_list, redirect_list, access_rules, acme_email, acme_ca = await asyncio.gather(
                 self._optional("/api/cert/list"),
                 self._optional("/api/redirect/list"),
                 self._optional("/api/access/list"),
@@ -335,13 +333,7 @@ class ZoraxyDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if isinstance(acme_ca, str):
             self._acme_ca = acme_ca.strip('"') or "Let's Encrypt"
 
-        if isinstance(host_rules, list) or isinstance(root_rules, list):
-            proxy_list = [
-                *(host_rules if isinstance(host_rules, list) else []),
-                *(root_rules if isinstance(root_rules, list) else []),
-            ]
-        else:
-            proxy_list = self._previous("proxy_list")
+        proxy_list = host_rules if isinstance(host_rules, list) else self._previous("proxy_list")
 
         # Only a list actually returned by Zoraxy may remove certificate entities (see async_setup_entry).
         self.cert_list_loaded = isinstance(cert_list, list)

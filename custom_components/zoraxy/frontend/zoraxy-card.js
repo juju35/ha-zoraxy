@@ -1,5 +1,16 @@
 const ZORAXY_CARD_VERSION = '1.5.0';
 
+// Escapes a value interpolated into innerHTML, as text or inside a quoted attribute (as parcelEsc in ha-parcel).
+function zoraxyEsc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
+}
+
+// Only http(s) URLs become links: anything else (javascript:, data:…) is dropped.
+function zoraxySafeUrl(url) {
+  const value = String(url || "").trim();
+  return /^https?:\/\//i.test(value) ? value : "";
+}
+
 class ZoraxyCard extends HTMLElement {
 
   // ── Statics ────────────────────────────────────────────────────────────────
@@ -120,8 +131,8 @@ class ZoraxyCard extends HTMLElement {
     super();
     this.attachShadow({ mode: "open" });
     this._sectionOpen = { ...ZoraxyCard.SECTION_DEFAULTS };
-    this._rendered = false;
-    this._lastRender = 0;
+    this._states = null;
+    this._renderKey = null;
   }
 
   static SECTION_DEFAULTS = { controls: true, certs: false, rules: false, redirects: false };
@@ -140,6 +151,7 @@ class ZoraxyCard extends HTMLElement {
 
   disconnectedCallback() {
     document.removeEventListener("click", this._onOutside, true);
+    clearTimeout(this._refreshTimer);
   }
 
   _setSection(id, open) {
@@ -150,24 +162,42 @@ class ZoraxyCard extends HTMLElement {
     if (arrow) arrow.classList.toggle("closed", !open);
   }
 
-  setConfig(config) { this._config = config; }
+  setConfig(config) {
+    this._config = config;
+    this._states = null;
+    if (this._hass) this._render();
+  }
 
   set hass(hass) {
     this._hass = hass;
-    const now = Date.now();
-    if (!this._rendered || now - this._lastRender > 15000) {
-      this._lastRender = now;
-      this._rendered = true;
-      this._render();
-    } else {
-      this._updateValues();
-    }
+    // Re-render only when a state the card shows changed (Home Assistant keeps the same state object while it
+    // doesn't change), the language changed, or the hour changed (certificate countdowns).
+    const states = this._entityIds().map((id) => hass.states[id]);
+    const key = `${this._lang()}|${Math.floor(Date.now() / 3600000)}`;
+    if (this._states && key === this._renderKey && states.length === this._states.length && states.every((st, i) => st === this._states[i])) return;
+    this._render();
+  }
+
+  // Entities of this card, found from the prefix. The list is cached on hass.entities (the entity registry),
+  // which only changes when entities are added or removed, not on every state change.
+  _entityIds() {
+    const registry = this._hass?.entities;
+    const prefix = this._prefix();
+    if (registry && this._idsFor === registry && this._idsPrefix === prefix) return this._ids;
+    const marker = `.${prefix}_`;
+    // Without the registry (older frontends, tests), the states are scanned each time.
+    const ids = Object.keys(registry || this._hass?.states || {}).filter((id) => id.includes(marker)).sort();
+    if (!registry) return ids;
+    this._ids = ids;
+    this._idsFor = registry;
+    this._idsPrefix = prefix;
+    return this._ids;
   }
 
   getCardSize() { return 7; }
   getGridOptions() { return { columns: 12, min_columns: 6 }; }
   static getConfigElement() { return document.createElement("zoraxy-card-editor"); }
-  static getStubConfig() { return { zoraxy_url: "http://192.168.1.253:8000" }; }
+  static getStubConfig() { return { zoraxy_url: "http://zoraxy.local:8000" }; }
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -207,16 +237,13 @@ class ZoraxyCard extends HTMLElement {
         enable: newEnabled,
       });
       // Full re-render once the Home Assistant coordinator has refreshed the data
-      setTimeout(() => {
-        this._lastRender = 0;
-        this._rendered = false;
+      clearTimeout(this._refreshTimer);
+      this._refreshTimer = setTimeout(() => {
         if (this._hass) this._render();
       }, 3000);
     } catch (e) {
       console.error("Zoraxy toggleRule error:", e);
       // Roll back the optimistic update
-      this._lastRender = 0;
-      this._rendered = false;
       if (this._hass) this._render();
     } finally {
       btn.disabled = false;
@@ -251,7 +278,7 @@ class ZoraxyCard extends HTMLElement {
   // Generic row: dot + label on the left, content on the right
   _row(dotOn, label, right) {
     return `<div class="row">
-      <div class="row-left">${this._dot(dotOn)}<span class="row-label">${label}</span></div>
+      <div class="row-left">${this._dot(dotOn)}<span class="row-label">${zoraxyEsc(label)}</span></div>
       <div class="row-right">${right}</div>
     </div>`;
   }
@@ -260,7 +287,7 @@ class ZoraxyCard extends HTMLElement {
     const open = this._sectionOpen[id] === true;
     return `<div class="section">
       <div class="sec-header" data-id="${id}">
-        <div class="section-title">${this._mdi(icon)}<span>${title}</span></div>
+        <div class="section-title">${this._mdi(icon)}<span>${zoraxyEsc(title)}</span></div>
         <span class="sec-arrow${open ? "" : " closed"}" data-id="${id}">${this._mdi(ZoraxyCard.ICONS.chevronDown)}</span>
       </div>
       <div class="sec-content" data-id="${id}" style="display:${open ? "block" : "none"};">${content}</div>
@@ -272,13 +299,15 @@ class ZoraxyCard extends HTMLElement {
   _buildRules(rules) {
     if (!rules?.length) return `<p class="empty">${this._t("noRules")}</p>`;
     return rules.map((r) => {
-      const right = `<span class="row-sub" title="${r.target}">${r.target}</span>
+      const target = zoraxyEsc(r.target);
+      const domain = zoraxyEsc(r.domain);
+      const right = `<span class="row-sub" title="${target}">${target}</span>
         <button class="icon-btn rule-btn ${r.enabled ? "ok" : "crit"}"
-          data-rule-domain="${r.domain}"
-          data-rule-enabled="${r.enabled}"
+          data-rule-domain="${domain}"
+          data-rule-enabled="${r.enabled ? "true" : "false"}"
           title="${r.enabled ? this._t("disableRule") : this._t("enableRule")}">${this._ruleBtnContent(r.enabled)}</button>`;
       return `<div class="row">
-        <div class="row-left"><span class="row-label domain-link" data-href="https://${r.domain}">${r.domain}</span></div>
+        <div class="row-left"><span class="row-label domain-link" data-href="https://${domain}">${domain}</span></div>
         <div class="row-right">${right}</div>
       </div>`;
     }).join("");
@@ -286,7 +315,7 @@ class ZoraxyCard extends HTMLElement {
 
   _buildCerts(prefix) {
     const certPrefix = `sensor.${prefix}_cert_`;
-    const sensors = Object.keys(this._hass?.states || {}).filter(id => id.startsWith(certPrefix)).sort();
+    const sensors = this._entityIds().filter(id => id.startsWith(certPrefix) && this._hass.states[id]);
     if (!sensors.length) return `<p class="empty">${this._t("noCerts")}</p>`;
     return sensors.map(sensorId => {
       const suffix    = sensorId.slice(certPrefix.length);
@@ -300,7 +329,7 @@ class ZoraxyCard extends HTMLElement {
         daysCls = days < 7 ? "crit" : days < 30 ? "warn" : "ok";
       }
       const right = `${this._chip(daysLabel, daysCls)}
-        <button class="icon-btn renew-btn" data-entity="${btnId}" title="${this._t("renew")}">
+        <button class="icon-btn renew-btn" data-entity="${zoraxyEsc(btnId)}" title="${this._t("renew")}">
           ${this._mdi(ZoraxyCard.ICONS.refresh)}
         </button>`;
       return this._row(!isExpiring, domain, right);
@@ -314,42 +343,19 @@ class ZoraxyCard extends HTMLElement {
       const dst   = r.TargetURL || "?";
       const code  = r.StatusCode ? `${r.StatusCode}` : "";
       const https = dst.startsWith("https");
-      const right = `<span class="row-sub">→ ${code}</span>
-        <span class="row-sub" title="${dst}">${dst}</span>
+      const right = `<span class="row-sub">→ ${zoraxyEsc(code)}</span>
+        <span class="row-sub" title="${zoraxyEsc(dst)}">${zoraxyEsc(dst)}</span>
         ${https ? this._mdi(ZoraxyCard.ICONS.lock) : ""}`;
       return this._row(true, src, right);
     }).join("");
-  }
-
-  // ── Partial update (between full re-renders) ───────────────────────────────
-
-  _updateValues() {
-    const root = this.shadowRoot;
-    if (!root?.querySelector(".mv")) return;
-    const p   = this._prefix();
-    const sp  = `sensor.${p}`;
-    const bp  = `binary_sensor.${p}`;
-
-    const status = root.getElementById("status");
-    if (status) status.innerHTML = this._statusChip(this._isOn(`${bp}_proxy_actif`));
-
-    const mvs = root.querySelectorAll(".mv");
-    const metrics = [`${sp}_regles_proxy`, `${sp}_regles_actives`, `${sp}_certificats_tls`, `${sp}_port_entrant`];
-    mvs.forEach((el, i) => { if (metrics[i]) el.textContent = this._state(metrics[i]); });
-
-    [["ctrl-https", `${bp}_redirection_https`], ["ctrl-port80", `${bp}_ecoute_port_80`], ["ctrl-devmode", `${bp}_mode_developpement`]].forEach(([id, entity]) => {
-      const btn = root.getElementById(id);
-      if (!btn) return;
-      const on = this._isOn(entity);
-      btn.className = `ctrl ${on ? "ok" : "idle"}`;
-      btn.querySelector(".cs").textContent = on ? this._t("on") : this._t("off");
-    });
   }
 
   // ── Full render ────────────────────────────────────────────────────────────
 
   _render() {
     if (!this._hass || !this._config) return;
+    this._states = this._entityIds().map((id) => this._hass.states[id]);
+    this._renderKey = `${this._lang()}|${Math.floor(Date.now() / 3600000)}`;
 
     const p   = this._prefix();
     const sp  = `sensor.${p}`;
@@ -366,8 +372,8 @@ class ZoraxyCard extends HTMLElement {
     const port          = this._state(`${sp}_port_entrant`);
     const rules         = this._attr(`${sp}_regles_proxy`, "rules") || [];
     const redirects     = this._attr(`${sp}_regles_proxy`, "redirects") || [];
-    const zoraxyUrl     = this._config.zoraxy_url || "";
-    const sub           = zoraxyUrl.replace(/^https?:\/\//, "").replace(/\/$/, "") || "Reverse proxy";
+    const zoraxyUrl     = zoraxySafeUrl(this._config.zoraxy_url);
+    const sub           = zoraxyUrl.replace(/^https?:\/\//i, "").replace(/\/$/, "") || "Reverse proxy";
 
     const ctrl = (id, icon, label, on) => `
       <button class="ctrl ${on ? "ok" : "idle"}" id="${id}">
@@ -376,7 +382,7 @@ class ZoraxyCard extends HTMLElement {
         <span class="cs">${on ? this._t("on") : this._t("off")}</span>
       </button>`;
 
-    const metric = (value, label) => `<div class="tile"><div class="mv">${value}</div><div class="ml">${label}</div></div>`;
+    const metric = (value, label) => `<div class="tile"><div class="mv">${zoraxyEsc(value)}</div><div class="ml">${label}</div></div>`;
 
     this.shadowRoot.innerHTML = `
       <style>${ZoraxyCard.CSS}</style>
@@ -384,8 +390,8 @@ class ZoraxyCard extends HTMLElement {
         <div class="header">
           ${ZoraxyCard.LOGO}
           <div class="titles">
-            <a class="name" ${zoraxyUrl ? `href="${zoraxyUrl}" target="_blank" rel="noopener noreferrer"` : ""}>Zoraxy</a>
-            <div class="sub">${sub}</div>
+            <a class="name" ${zoraxyUrl ? `href="${zoraxyEsc(zoraxyUrl)}" target="_blank" rel="noopener noreferrer"` : ""}>Zoraxy</a>
+            <div class="sub">${zoraxyEsc(sub)}</div>
           </div>
           <span id="status">${this._statusChip(proxyRunning)}</span>
         </div>

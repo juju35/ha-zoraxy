@@ -4,10 +4,21 @@
       "user": {
         "title": "Zoraxy - Configuration",
         "data": {
-          "host": "Zoraxy address (e.g. http://192.168.1.253:8000)",
+          "host": "Zoraxy address (URL with port)",
           "username": "Username",
           "password": "Password",
-          "scan_interval": "Refresh interval (seconds)"
+          "scan_interval": "Refresh interval (seconds)",
+          "verify_ssl": "Verify the TLS certificate"
+        },
+        "data_description": {
+          "verify_ssl": "Turn off only for an HTTPS address with a self-signed certificate."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Zoraxy - New password",
+        "description": "Zoraxy refused the password of {username} on {host}.",
+        "data": {
+          "password": "Password"
         }
       }
     },
@@ -17,7 +28,22 @@
       "unknown": "Unknown error"
     },
     "abort": {
-      "already_configured": "Zoraxy is already configured"
+      "already_configured": "Zoraxy is already configured",
+      "reauth_successful": "Password updated"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Zoraxy - Options",
+        "data": {
+          "scan_interval": "Refresh interval (seconds)",
+          "verify_ssl": "Verify the TLS certificate"
+        },
+        "data_description": {
+          "verify_ssl": "Turn off only for an HTTPS address with a self-signed certificate."
+        }
+      }
     }
   },
   "entity": {

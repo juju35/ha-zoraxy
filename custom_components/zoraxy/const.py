@@ -2,6 +2,14 @@
 
 DOMAIN = "zoraxy"
 DEFAULT_SCAN_INTERVAL = 30  # seconds
+MIN_SCAN_INTERVAL = 10  # seconds
+DEFAULT_HOST = "http://zoraxy.local:8000"
+DEFAULT_VERIFY_SSL = True
+
+CONF_SCAN_INTERVAL = "scan_interval"
+CONF_VERIFY_SSL = "verify_ssl"
+
+SERVICE_TOGGLE_PROXY_RULE = "toggle_proxy_rule"
 EXPIRY_WARNING_DAYS = 30  # days before expiry that trigger the warning
 
 DEVICE_INFO_BASE = {

@@ -28,7 +28,7 @@ Home Assistant integration and Lovelace card for the [Zoraxy](https://github.com
 
 ## Prerequisites
 
-- Home Assistant **2024.11** or later
+- Home Assistant **2024.12** or later
 - Zoraxy **v3.3.2** or later, and an account on its web interface
 
 ## Installation
@@ -65,9 +65,12 @@ The card `zoraxy-card.js` is part of the integration: it is served at `/zoraxy/z
 
 | Field | Example |
 |---|---|
-| Address | `http://192.168.1.253:8000` |
+| Address | `http://zoraxy.local:8000` |
 | Username / Password | Your Zoraxy credentials |
-| Refresh interval | `30` seconds |
+| Refresh interval | `30` seconds (10 minimum) |
+| Verify the TLS certificate | On by default; turn it off only for an `https://` address with a self-signed certificate |
+
+The refresh interval and the TLS verification can be changed later with **Configure** on the integration. When Zoraxy refuses the password, Home Assistant asks for the new one in **Settings → Devices & services**. Entries created with version 1.5.0 or earlier keep the TLS verification off, as before; turn it on in the options if your certificate is valid.
 
 ### Card
 
@@ -75,12 +78,12 @@ Edit a dashboard, click **Add card** and search for **Zoraxy Card**. Set the Zor
 
 ```yaml
 type: custom:zoraxy-card
-zoraxy_url: http://192.168.1.253:8000
+zoraxy_url: http://zoraxy.local:8000
 ```
 
 | Option | Default | Description |
 |---|---|---|
-| `zoraxy_url` | — | Zoraxy web interface, opened from the card title and shown under it |
+| `zoraxy_url` | — | Zoraxy web interface (`http://` or `https://`), opened from the card title and shown under it |
 | `entity_prefix` | `zoraxy_reverse_proxy_zoraxy` | Common part of the entity ids |
 
 ### Entities
@@ -111,7 +114,9 @@ Names follow the Home Assistant language (English or French) under the **Zoraxy 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `domain` | `string` | yes | Domain of the rule (e.g. `myapp.example.com`) |
-| `enable` | `boolean` | yes | `true` to enable, `false` to disable |
+| `enable` | `boolean` | no | `true` to enable, `false` to disable; left out, the rule is toggled |
+
+The action fails (and the card's button goes back) when the rule is not found or Zoraxy refuses the change. With several Zoraxy instances, the rule is looked up in all of them.
 
 ```yaml
 action: zoraxy.toggle_proxy_rule

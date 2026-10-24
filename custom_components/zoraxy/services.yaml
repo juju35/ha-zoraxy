@@ -11,8 +11,8 @@ toggle_proxy_rule:
         text:
     enable:
       name: Enable
-      description: Set to true to enable the rule, false to disable it.
-      required: true
+      description: Set to true to enable the rule, false to disable it. Leave out to toggle the rule.
+      required: false
       example: true
       selector:
         boolean:

@@ -4,10 +4,21 @@
       "user": {
         "title": "Zoraxy - Configuration",
         "data": {
-          "host": "Adresse de Zoraxy (ex: http://192.168.1.253:8000)",
+          "host": "Adresse de Zoraxy (URL avec le port)",
           "username": "Nom d'utilisateur",
           "password": "Mot de passe",
-          "scan_interval": "Intervalle de rafraîchissement (secondes)"
+          "scan_interval": "Intervalle de rafraîchissement (secondes)",
+          "verify_ssl": "Vérifier le certificat TLS"
+        },
+        "data_description": {
+          "verify_ssl": "À désactiver uniquement pour une adresse HTTPS avec un certificat auto-signé."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Zoraxy - Nouveau mot de passe",
+        "description": "Zoraxy a refusé le mot de passe de {username} sur {host}.",
+        "data": {
+          "password": "Mot de passe"
         }
       }
     },
@@ -17,7 +28,22 @@
       "unknown": "Erreur inconnue"
     },
     "abort": {
-      "already_configured": "Zoraxy est déjà configuré"
+      "already_configured": "Zoraxy est déjà configuré",
+      "reauth_successful": "Mot de passe mis à jour"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Zoraxy - Options",
+        "data": {
+          "scan_interval": "Intervalle de rafraîchissement (secondes)",
+          "verify_ssl": "Vérifier le certificat TLS"
+        },
+        "data_description": {
+          "verify_ssl": "À désactiver uniquement pour une adresse HTTPS avec un certificat auto-signé."
+        }
+      }
     }
   },
   "entity": {

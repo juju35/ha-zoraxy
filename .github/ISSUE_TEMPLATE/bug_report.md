@@ -31,7 +31,7 @@ If applicable, add screenshots to help explain your problem.
 **Card configuration:**
 ```yaml
 type: custom:zoraxy-card
-zoraxy_url: http://192.168.1.253:8000
+zoraxy_url: http://zoraxy.local:8000
 ```
 
 **Additional context**

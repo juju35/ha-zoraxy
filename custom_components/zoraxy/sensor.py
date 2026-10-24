@@ -5,10 +5,10 @@ from __future__ import annotations
 from datetime import datetime
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import ZoraxyDataUpdateCoordinator
-from .const import DEVICE_INFO_BASE, DOMAIN, safe_domain
+from .const import DOMAIN, safe_domain
+from .entity import ZoraxyDomainEntity, ZoraxyEntity
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
@@ -24,21 +24,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
     async_add_entities(entities)
 
 
-class ZoraxyBaseSensor(CoordinatorEntity, SensorEntity):
-    def __init__(self, coordinator, entry):
-        super().__init__(coordinator)
-        self._entry = entry
-
-    @property
-    def device_info(self):
-        return {
-            **DEVICE_INFO_BASE,
-            "identifiers": {(DOMAIN, self._entry.entry_id)},
-            "configuration_url": self._entry.data["host"],
-        }
-
-    def _data(self) -> dict:
-        return self.coordinator.data or {}
+class ZoraxyBaseSensor(ZoraxyEntity, SensorEntity):
+    _platform = "sensor"
 
     def _proxy_list(self) -> list:
         return self._data().get("proxy_list", [])
@@ -49,8 +36,8 @@ class ZoraxyBaseSensor(CoordinatorEntity, SensorEntity):
 
 
 class ZoraxyProxyRulesCountSensor(ZoraxyBaseSensor):
-    _attr_name = "Zoraxy - Règles proxy"
-    _attr_icon = "mdi:router-network"
+    _attr_translation_key = "proxy_rules"
+    _legacy_name = "Zoraxy - Règles proxy"
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_native_unit_of_measurement = "règles"
 
@@ -85,8 +72,8 @@ class ZoraxyProxyRulesCountSensor(ZoraxyBaseSensor):
 
 
 class ZoraxyActiveRulesCountSensor(ZoraxyBaseSensor):
-    _attr_name = "Zoraxy - Règles actives"
-    _attr_icon = "mdi:check-network"
+    _attr_translation_key = "active_rules"
+    _legacy_name = "Zoraxy - Règles actives"
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_native_unit_of_measurement = "actives"
 
@@ -100,8 +87,8 @@ class ZoraxyActiveRulesCountSensor(ZoraxyBaseSensor):
 
 
 class ZoraxyCertCountSensor(ZoraxyBaseSensor):
-    _attr_name = "Zoraxy - Certificats TLS"
-    _attr_icon = "mdi:certificate"
+    _attr_translation_key = "tls_certificates"
+    _legacy_name = "Zoraxy - Certificats TLS"
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_native_unit_of_measurement = "certificats"
 
@@ -122,8 +109,8 @@ class ZoraxyCertCountSensor(ZoraxyBaseSensor):
 
 
 class ZoraxyAccessRulesCountSensor(ZoraxyBaseSensor):
-    _attr_name = "Zoraxy - Règles d'accès"
-    _attr_icon = "mdi:shield-account"
+    _attr_translation_key = "access_rules"
+    _legacy_name = "Zoraxy - Règles d'accès"
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_native_unit_of_measurement = "règles"
 
@@ -137,8 +124,8 @@ class ZoraxyAccessRulesCountSensor(ZoraxyBaseSensor):
 
 
 class ZoraxyInboundPortSensor(ZoraxyBaseSensor):
-    _attr_name = "Zoraxy - Port entrant"
-    _attr_icon = "mdi:ethernet-cable"
+    _attr_translation_key = "inbound_port"
+    _legacy_name = "Zoraxy - Port entrant"
 
     @property
     def unique_id(self):
@@ -149,23 +136,16 @@ class ZoraxyInboundPortSensor(ZoraxyBaseSensor):
         return self._status_option().get("Port", "?")
 
 
-class ZoraxyCertExpirySensor(ZoraxyBaseSensor):
+class ZoraxyCertExpirySensor(ZoraxyDomainEntity, ZoraxyBaseSensor):
     """Expiry date of one certificate."""
 
     _attr_device_class = SensorDeviceClass.TIMESTAMP
-    _attr_icon = "mdi:certificate-outline"
-
-    def __init__(self, coordinator, entry, domain_name: str):
-        super().__init__(coordinator, entry)
-        self._domain = domain_name
+    _attr_translation_key = "certificate"
+    _legacy_name = "Zoraxy - Cert {domain}"
 
     @property
     def unique_id(self):
         return f"{self._entry.entry_id}_cert_expiry_{safe_domain(self._domain)}"
-
-    @property
-    def name(self):
-        return f"Zoraxy - Cert {self._domain}"
 
     @property
     def native_value(self):

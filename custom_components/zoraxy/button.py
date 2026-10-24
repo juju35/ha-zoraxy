@@ -5,10 +5,10 @@ from __future__ import annotations
 import logging
 
 from homeassistant.components.button import ButtonEntity
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import ZoraxyDataUpdateCoordinator
-from .const import DEVICE_INFO_BASE, DOMAIN, safe_domain
+from .const import DOMAIN, safe_domain
+from .entity import ZoraxyDomainEntity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -18,31 +18,16 @@ async def async_setup_entry(hass, entry, async_add_entities):
     async_add_entities([ZoraxyCertRenewButton(coordinator, entry, d) for d in coordinator.data.get("cert_list", [])])
 
 
-class ZoraxyCertRenewButton(CoordinatorEntity, ButtonEntity):
+class ZoraxyCertRenewButton(ZoraxyDomainEntity, ButtonEntity):
     """ACME renewal button for one certificate."""
 
-    _attr_icon = "mdi:certificate-outline"
-
-    def __init__(self, coordinator: ZoraxyDataUpdateCoordinator, entry, domain_name: str):
-        super().__init__(coordinator)
-        self._entry = entry
-        self._domain = domain_name
-
-    @property
-    def device_info(self):
-        return {
-            **DEVICE_INFO_BASE,
-            "identifiers": {(DOMAIN, self._entry.entry_id)},
-            "configuration_url": self._entry.data["host"],
-        }
+    _attr_translation_key = "renew"
+    _platform = "button"
+    _legacy_name = "Zoraxy - Renouveler {domain}"
 
     @property
     def unique_id(self):
         return f"{self._entry.entry_id}_renew_{safe_domain(self._domain)}"
-
-    @property
-    def name(self):
-        return f"Zoraxy - Renouveler {self._domain}"
 
     async def async_press(self):
         success = await self.coordinator.renew_certificate(self._domain)

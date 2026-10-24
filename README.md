@@ -104,7 +104,7 @@ zoraxy_url: http://192.168.1.253:8000
 | `switch.*_ecoute_port_80` | Turns the port 80 listener on or off |
 | `switch.*_mode_developpement` | Turns the development mode on or off |
 
-The entity ids keep their historical French suffixes so existing dashboards and automations keep working; their names are translated.
+Names follow the Home Assistant language (English or French) under the **Zoraxy Reverse Proxy** device. The entity ids keep their historical French suffixes so existing dashboards and automations keep working; on a new install they start with `zoraxy_reverse_proxy_zoraxy_`, the card's default prefix.
 
 ### Service `zoraxy.toggle_proxy_rule`
 

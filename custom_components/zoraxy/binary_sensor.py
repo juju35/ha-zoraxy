@@ -5,10 +5,10 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass, BinarySensorEntity
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import ZoraxyDataUpdateCoordinator
-from .const import DEVICE_INFO_BASE, DOMAIN, EXPIRY_WARNING_DAYS, safe_domain
+from .const import DOMAIN, EXPIRY_WARNING_DAYS, safe_domain
+from .entity import ZoraxyDomainEntity, ZoraxyEntity
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
@@ -25,21 +25,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
     )
 
 
-class ZoraxyBaseBinarySensor(CoordinatorEntity, BinarySensorEntity):
-    def __init__(self, coordinator, entry):
-        super().__init__(coordinator)
-        self._entry = entry
-
-    @property
-    def device_info(self):
-        return {
-            **DEVICE_INFO_BASE,
-            "identifiers": {(DOMAIN, self._entry.entry_id)},
-            "configuration_url": self._entry.data["host"],
-        }
-
-    def _data(self) -> dict:
-        return self.coordinator.data or {}
+class ZoraxyBaseBinarySensor(ZoraxyEntity, BinarySensorEntity):
+    _platform = "binary_sensor"
 
     def _option(self) -> dict:
         status = self._data().get("proxy_status", {})
@@ -50,8 +37,8 @@ class ZoraxyBaseBinarySensor(CoordinatorEntity, BinarySensorEntity):
 
 
 class ZoraxyProxyRunningBinarySensor(ZoraxyBaseBinarySensor):
-    _attr_name = "Zoraxy - Proxy actif"
-    _attr_icon = "mdi:server-network"
+    _attr_translation_key = "proxy_running"
+    _legacy_name = "Zoraxy - Proxy actif"
     _attr_device_class = BinarySensorDeviceClass.RUNNING
 
     @property
@@ -64,8 +51,8 @@ class ZoraxyProxyRunningBinarySensor(ZoraxyBaseBinarySensor):
 
 
 class ZoraxyTLSEnabledBinarySensor(ZoraxyBaseBinarySensor):
-    _attr_name = "Zoraxy - TLS activé"
-    _attr_icon = "mdi:shield-lock"
+    _attr_translation_key = "tls_enabled"
+    _legacy_name = "Zoraxy - TLS activé"
 
     @property
     def unique_id(self):
@@ -77,8 +64,8 @@ class ZoraxyTLSEnabledBinarySensor(ZoraxyBaseBinarySensor):
 
 
 class ZoraxyHttpsRedirectBinarySensor(ZoraxyBaseBinarySensor):
-    _attr_name = "Zoraxy - Redirection HTTPS"
-    _attr_icon = "mdi:lock-check"
+    _attr_translation_key = "https_redirect"
+    _legacy_name = "Zoraxy - Redirection HTTPS"
 
     @property
     def unique_id(self):
@@ -90,8 +77,8 @@ class ZoraxyHttpsRedirectBinarySensor(ZoraxyBaseBinarySensor):
 
 
 class ZoraxyPort80BinarySensor(ZoraxyBaseBinarySensor):
-    _attr_name = "Zoraxy - Écoute port 80"
-    _attr_icon = "mdi:web"
+    _attr_translation_key = "port_80"
+    _legacy_name = "Zoraxy - Écoute port 80"
 
     @property
     def unique_id(self):
@@ -103,8 +90,8 @@ class ZoraxyPort80BinarySensor(ZoraxyBaseBinarySensor):
 
 
 class ZoraxyDevModeBinarySensor(ZoraxyBaseBinarySensor):
-    _attr_name = "Zoraxy - Mode développement"
-    _attr_icon = "mdi:code-braces"
+    _attr_translation_key = "development_mode"
+    _legacy_name = "Zoraxy - Mode développement"
 
     @property
     def unique_id(self):
@@ -118,22 +105,16 @@ class ZoraxyDevModeBinarySensor(ZoraxyBaseBinarySensor):
 # ── Per-certificate sensors ────────────────────────────────────────────────────
 
 
-class ZoraxyCertExpiringBinarySensor(ZoraxyBaseBinarySensor):
+class ZoraxyCertExpiringBinarySensor(ZoraxyDomainEntity, ZoraxyBaseBinarySensor):
     """On when the certificate expires in less than EXPIRY_WARNING_DAYS days."""
 
     _attr_device_class = BinarySensorDeviceClass.PROBLEM
-
-    def __init__(self, coordinator, entry, domain_name: str):
-        super().__init__(coordinator, entry)
-        self._domain = domain_name
+    _attr_translation_key = "certificate_expiring"
+    _legacy_name = "Zoraxy - Cert expirant {domain}"
 
     @property
     def unique_id(self):
         return f"{self._entry.entry_id}_cert_expiring_{safe_domain(self._domain)}"
-
-    @property
-    def name(self):
-        return f"Zoraxy - Cert expirant {self._domain}"
 
     @property
     def is_on(self):

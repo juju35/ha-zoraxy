@@ -22,23 +22,60 @@
   },
   "entity": {
     "sensor": {
-      "zoraxy_regles_proxy": { "name": "Règles proxy" },
-      "zoraxy_regles_actives": { "name": "Règles actives" },
-      "zoraxy_certificats_tls": { "name": "Certificats TLS" },
-      "zoraxy_regles_d_acces": { "name": "Règles d'accès" },
-      "zoraxy_port_entrant": { "name": "Port entrant" }
+      "proxy_rules": {
+        "name": "Règles proxy"
+      },
+      "active_rules": {
+        "name": "Règles actives"
+      },
+      "tls_certificates": {
+        "name": "Certificats TLS"
+      },
+      "access_rules": {
+        "name": "Règles d'accès"
+      },
+      "inbound_port": {
+        "name": "Port entrant"
+      },
+      "certificate": {
+        "name": "Certificat {domain}"
+      }
     },
     "binary_sensor": {
-      "zoraxy_proxy_actif": { "name": "Proxy actif" },
-      "zoraxy_tls_active": { "name": "TLS activé" },
-      "zoraxy_redirection_https": { "name": "Redirection HTTPS" },
-      "zoraxy_ecoute_port_80": { "name": "Écoute port 80" },
-      "zoraxy_mode_developpement": { "name": "Mode développement" }
+      "proxy_running": {
+        "name": "Proxy actif"
+      },
+      "tls_enabled": {
+        "name": "TLS activé"
+      },
+      "https_redirect": {
+        "name": "Redirection HTTPS"
+      },
+      "port_80": {
+        "name": "Écoute port 80"
+      },
+      "development_mode": {
+        "name": "Mode développement"
+      },
+      "certificate_expiring": {
+        "name": "Certificat expirant {domain}"
+      }
     },
     "switch": {
-      "zoraxy_redirection_https": { "name": "Redirection HTTPS" },
-      "zoraxy_ecoute_port_80": { "name": "Écoute port 80" },
-      "zoraxy_mode_developpement": { "name": "Mode développement" }
+      "https_redirect": {
+        "name": "Redirection HTTPS"
+      },
+      "port_80": {
+        "name": "Écoute port 80"
+      },
+      "development_mode": {
+        "name": "Mode développement"
+      }
+    },
+    "button": {
+      "renew": {
+        "name": "Renouveler {domain}"
+      }
     }
   }
 }

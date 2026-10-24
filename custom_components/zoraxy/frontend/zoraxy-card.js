@@ -230,7 +230,10 @@ class ZoraxyCard extends HTMLElement {
   _isOn(id) { return this._state(id) === "on"; }
 
   async _toggle(id) {
-    await this._hass.callService("homeassistant", this._isOn(id) ? "turn_off" : "turn_on", { entity_id: id });
+    // Home Assistant already shows the error (HomeAssistantError) in a toast.
+    await this._hass
+      .callService("homeassistant", this._isOn(id) ? "turn_off" : "turn_on", { entity_id: id })
+      .catch((e) => console.warn("Zoraxy:", e?.message ?? e));
   }
   async _pressButton(id) {
     await this._hass.callService("button", "press", { entity_id: id });
@@ -457,6 +460,8 @@ class ZoraxyCard extends HTMLElement {
         btn.disabled = true;
         try {
           await this._pressButton(btn.dataset.entity);
+        } catch (err) {
+          console.warn("Zoraxy:", err?.message ?? err);
         } finally {
           setTimeout(() => { btn.classList.remove("busy"); btn.disabled = false; }, 3000);
         }

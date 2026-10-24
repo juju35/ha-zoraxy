@@ -126,5 +126,5 @@ zoraxy_url: http://zoraxy.local:8000
 - `/api/acme/obtainCert` is a GET (not POST) despite being a mutation
 - All POST API calls require `X-CSRF-Token` header (same token as login)
 - `CookieJar(unsafe=True)` is mandatory for local IP addresses
-- Tests: `pip install -r requirements_test.txt && pytest`
+- Tests: `pip install -r requirements_test.txt && pytest`. Job `tests` runs on Python 3.14, i.e. the latest Home Assistant (2026.3+ needs Python 3.14; 3.13 would silently resolve to 2026.2) and prints its version as an annotation; job `pytest-min-ha` runs the suite on HA 2024.12.0. An autouse fixture (`tests/conftest.py`, `no_deprecated_calls`) fails any test during which Home Assistant reports a deprecated call naming `zoraxy`, and CI turns those reports into annotations. Never look a device up with `DeviceRegistry.async_get_device` (deprecated in 2026.8; `async_get_device_by_identifier` doesn't exist on 2024.12): go through the entities' `device_id`. The http fixture patch only applies where `start_http_server_and_save_config` still exists (gone in 2026.10).
 - `asyncio.timeout` is used (Python 3.11+ native); no `async_timeout` dependency

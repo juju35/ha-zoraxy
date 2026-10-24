@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 from homeassistant.components.switch import SwitchEntity
+from homeassistant.exceptions import HomeAssistantError
 
 from . import ZoraxyDataUpdateCoordinator
+from .api import ZoraxyError
 from .const import DOMAIN
 from .entity import ZoraxyEntity
 
@@ -23,13 +25,17 @@ async def async_setup_entry(hass, entry, async_add_entities):
 class ZoraxyBaseSwitch(ZoraxyEntity, SwitchEntity):
     _platform = "switch"
 
-    def _bool_val(self, key: str) -> bool:
-        """Read a boolean from the coordinator data."""
-        val = self._data().get(key)
-        return val.get("enabled", val.get("value", False)) if isinstance(val, dict) else bool(val)
+    def _option(self, key: str) -> bool:
+        """Read a flag of the proxy options, as the binary sensors do."""
+        status = self._data().get("proxy_status", {})
+        option = status.get("Option", {}) if isinstance(status, dict) else {}
+        return bool((option or {}).get(key, False))
 
     async def _set(self, endpoint: str, enable: bool) -> None:
-        await self.coordinator._fetch(endpoint, method="POST", fields={"enable": "true" if enable else "false"})
+        try:
+            await self.coordinator.client.command(endpoint, fields={"enable": "true" if enable else "false"})
+        except ZoraxyError as err:
+            raise HomeAssistantError(f"Zoraxy: {err}") from err
         await self.coordinator.async_request_refresh()
 
 
@@ -43,7 +49,7 @@ class ZoraxyHttpsRedirectSwitch(ZoraxyBaseSwitch):
 
     @property
     def is_on(self):
-        return self._bool_val("https_redirect")
+        return self._option("ForceHttpsRedirect")
 
     async def async_turn_on(self, **_):
         await self._set("/api/proxy/useHttpsRedirect", True)
@@ -62,7 +68,7 @@ class ZoraxyPort80Switch(ZoraxyBaseSwitch):
 
     @property
     def is_on(self):
-        return self._bool_val("listen_port80")
+        return self._option("ListenOnPort80")
 
     async def async_turn_on(self, **_):
         await self._set("/api/proxy/listenPort80", True)
@@ -81,7 +87,7 @@ class ZoraxyDevModeSwitch(ZoraxyBaseSwitch):
 
     @property
     def is_on(self):
-        return self._bool_val("development_mode")
+        return self._option("NoCache")
 
     async def async_turn_on(self, **_):
         await self._set("/api/proxy/developmentMode", True)

@@ -28,7 +28,7 @@ Home Assistant integration and Lovelace card for the [Zoraxy](https://github.com
 
 ## Prerequisites
 
-- Home Assistant **2024.11** or later
+- Home Assistant **2024.12** or later
 - Zoraxy **v3.3.2** or later, and an account on its web interface
 
 ## Installation

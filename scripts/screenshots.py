@@ -107,9 +107,11 @@ def main():
             viewport={"width": 1000, "height": 2400},
             timezone_id="Europe/Paris",
         )
-        page = context.new_page()
-        page.clock.set_fixed_time(NOW)
         for shot in SHOTS:
+            # A new page per capture: the card's top-level declarations would clash in a reused page.
+            page = context.new_page()
+            page.on("pageerror", lambda err: print(f"page error: {err}"))
+            page.clock.set_fixed_time(NOW)
             page.set_content(page_html(shot["theme"]))
             page.add_script_tag(content=HA_CARD)
             page.add_script_tag(content=CARD_JS)
@@ -126,6 +128,7 @@ def main():
             page.wait_for_timeout(300)
             page.locator("zoraxy-card").screenshot(path=str(out_dir / f"{shot['file']}.png"), animations="disabled")
             print(f"screenshots/{shot['file']}.png")
+            page.close()
         browser.close()
 
 

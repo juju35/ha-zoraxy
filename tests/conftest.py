@@ -17,5 +17,8 @@ def stub_frontend():
     with (
         patch("homeassistant.components.frontend.async_setup", return_value=True),
         patch("custom_components.zoraxy.add_extra_js_url") as add_js,
+        # No test needs a listening server (hass_client has its own); on older Home Assistant versions,
+        # starting it with sockets blocked leaves a delayed config write behind.
+        patch("homeassistant.components.http.start_http_server_and_save_config"),
     ):
         yield add_js

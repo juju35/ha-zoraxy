@@ -7,12 +7,12 @@ from datetime import UTC, datetime, timedelta
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass, BinarySensorEntity
 
 from . import ZoraxyDataUpdateCoordinator
-from .const import DOMAIN, EXPIRY_WARNING_DAYS, safe_domain
+from .const import EXPIRY_WARNING_DAYS, safe_domain
 from .entity import ZoraxyDomainEntity, ZoraxyEntity
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
-    coordinator: ZoraxyDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator: ZoraxyDataUpdateCoordinator = entry.runtime_data
     async_add_entities(
         [
             ZoraxyProxyRunningBinarySensor(coordinator, entry),

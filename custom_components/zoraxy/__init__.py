@@ -187,7 +187,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await coordinator.async_config_entry_first_refresh()
     if coordinator.cert_list_loaded:
         await _cleanup_stale_entities(hass, entry, coordinator.data["cert_list"])
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+    entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_async_reload))
     return True
@@ -198,10 +198,7 @@ async def _async_reload(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-    if unload_ok:
-        hass.data[DOMAIN].pop(entry.entry_id, None)
-    return unload_ok
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 
 def _async_toggle_proxy_rule(hass: HomeAssistant):
@@ -211,9 +208,9 @@ def _async_toggle_proxy_rule(hass: HomeAssistant):
         domain_name: str = call.data["domain"]
         enable: bool | None = call.data.get("enable")
         coordinators: list[ZoraxyDataUpdateCoordinator] = [
-            coordinator
-            for entry_id, coordinator in hass.data.get(DOMAIN, {}).items()
-            if (entry := hass.config_entries.async_get_entry(entry_id)) and entry.state is ConfigEntryState.LOADED
+            entry.runtime_data
+            for entry in hass.config_entries.async_entries(DOMAIN)
+            if entry.state is ConfigEntryState.LOADED
         ]
         if not coordinators:
             raise ServiceValidationError("No Zoraxy instance is loaded")

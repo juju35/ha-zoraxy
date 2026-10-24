@@ -9,6 +9,7 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.setup import async_setup_component
@@ -105,6 +106,18 @@ async def test_setup_and_unload(hass, aioclient_mock, entry):
     assert entry.state is ConfigEntryState.NOT_LOADED
 
 
+async def test_entities_share_one_device(hass, aioclient_mock, entry):
+    """Every entity is attached to the same Zoraxy device, which links to the Zoraxy address."""
+    mock_zoraxy(aioclient_mock)
+    await _setup(hass, entry)
+    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, entry.entry_id)})
+    assert device is not None
+    assert (device.name, device.manufacturer, device.model) == ("Zoraxy Reverse Proxy", "tobychui", "Zoraxy")
+    assert device.configuration_url == HOST
+    entities = er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
+    assert entities and {e.device_id for e in entities} == {device.id}
+
+
 async def test_switches_read_proxy_options(hass, aioclient_mock, entry):
     """The switches follow proxy_status.Option, like the binary sensors (they were always off)."""
     mock_zoraxy(aioclient_mock)
@@ -176,7 +189,7 @@ async def test_status_failure_makes_entities_unavailable(hass, aioclient_mock, e
     """A failed status call fails the update instead of showing the proxy as stopped."""
     mock_zoraxy(aioclient_mock)
     await _setup(hass, entry)
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     aioclient_mock.clear_requests()
     mock_zoraxy(aioclient_mock, status=500)
     await coordinator.async_refresh()
@@ -227,10 +240,10 @@ async def test_toggle_proxy_rule_after_reload(hass, aioclient_mock, entry):
     mock_zoraxy(aioclient_mock)
     aioclient_mock.post(f"{HOST}/api/proxy/toggle", text="OK")
     await _setup(hass, entry)
-    first = hass.data[DOMAIN][entry.entry_id]
+    first = entry.runtime_data
     assert await hass.config_entries.async_reload(entry.entry_id)
     await hass.async_block_till_done()
-    assert hass.data[DOMAIN][entry.entry_id] is not first
+    assert entry.runtime_data is not first
 
     await hass.services.async_call(
         DOMAIN, "toggle_proxy_rule", {"domain": "app.example.org", "enable": False}, blocking=True
@@ -377,7 +390,7 @@ async def test_options_flow(hass, aioclient_mock, entry):
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     await hass.async_block_till_done()
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     assert coordinator.update_interval.total_seconds() == 120
 
 
@@ -386,7 +399,7 @@ async def test_scan_interval_has_a_minimum(hass, aioclient_mock):
     entry.add_to_hass(hass)
     mock_zoraxy(aioclient_mock)
     await _setup(hass, entry)
-    assert hass.data[DOMAIN][entry.entry_id].update_interval.total_seconds() == 10
+    assert entry.runtime_data.update_interval.total_seconds() == 10
 
 
 async def test_reauth_flow(hass, aioclient_mock, entry):

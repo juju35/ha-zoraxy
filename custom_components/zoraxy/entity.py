@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import slugify
 
@@ -25,14 +26,11 @@ class ZoraxyEntity(CoordinatorEntity[ZoraxyDataUpdateCoordinator]):
         super().__init__(coordinator)
         self._entry = entry
         self.entity_id = f"{self._platform}.{slugify(f'{DEVICE_INFO_BASE["name"]} {self._legacy_name}')}"
-
-    @property
-    def device_info(self):
-        return {
+        self._attr_device_info = DeviceInfo(
             **DEVICE_INFO_BASE,
-            "identifiers": {(DOMAIN, self._entry.entry_id)},
-            "configuration_url": self._entry.data["host"],
-        }
+            identifiers={(DOMAIN, entry.entry_id)},
+            configuration_url=entry.data["host"],
+        )
 
     def _data(self) -> dict:
         return self.coordinator.data or {}

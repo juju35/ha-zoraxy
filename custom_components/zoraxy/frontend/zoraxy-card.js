@@ -116,6 +116,7 @@ class ZoraxyCard extends HTMLElement {
     .row-sub { font-size: 11px; color: var(--secondary-text-color); max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .domain-link { cursor: pointer; }
     .domain-link:hover { text-decoration: underline; }
+    .sec-header:focus-visible, .domain-link:focus-visible { outline: 2px solid var(--zx-accent); outline-offset: 2px; border-radius: 4px; }
     .empty { color: var(--secondary-text-color); font-size: 13px; padding: 4px 0; margin: 0; }
     .icon-btn { display: inline-flex; align-items: center; justify-content: center; gap: 4px; background: none; cursor: pointer;
                 border: 1px solid var(--divider-color); border-radius: 10px; padding: 4px 8px; font-family: inherit;
@@ -156,13 +157,19 @@ class ZoraxyCard extends HTMLElement {
 
   _setSection(id, open) {
     this._sectionOpen[id] = open;
+    const header = this.shadowRoot.querySelector(`.sec-header[data-id="${id}"]`);
     const content = this.shadowRoot.querySelector(`.sec-content[data-id="${id}"]`);
     const arrow = this.shadowRoot.querySelector(`.sec-arrow[data-id="${id}"]`);
+    if (header) header.setAttribute("aria-expanded", String(open));
     if (content) content.style.display = open ? "block" : "none";
     if (arrow) arrow.classList.toggle("closed", !open);
   }
 
   setConfig(config) {
+    if (!config || typeof config !== "object") throw new Error("Invalid configuration");
+    for (const key of ["zoraxy_url", "entity_prefix"]) {
+      if (config[key] != null && typeof config[key] !== "string") throw new Error(`${key} must be a string`);
+    }
     this._config = config;
     this._states = null;
     if (this._hass) this._render();
@@ -194,7 +201,15 @@ class ZoraxyCard extends HTMLElement {
     return this._ids;
   }
 
-  getCardSize() { return 7; }
+  // Header and metrics, one line per section header, and the controls when that section is open (7 by default).
+  getCardSize() {
+    const open = this._sectionOpen;
+    const rows = (n) => Math.ceil(n / 2);
+    const rules = this._hass ? this._attr(`sensor.${this._prefix()}_regles_proxy`, "rules") || [] : [];
+    const redirects = this._hass ? this._attr(`sensor.${this._prefix()}_regles_proxy`, "redirects") || [] : [];
+    const certs = this._hass ? this._entityIds().filter((id) => id.startsWith(`sensor.${this._prefix()}_cert_`)).length : 0;
+    return 2 + 4 + (open.controls ? 1 : 0) + (open.certs ? rows(certs) : 0) + (open.rules ? rows(rules.length) : 0) + (open.redirects ? rows(redirects.length) : 0);
+  }
   getGridOptions() { return { columns: 12, min_columns: 6 }; }
   static getConfigElement() { return document.createElement("zoraxy-card-editor"); }
   static getStubConfig() { return { zoraxy_url: "http://zoraxy.local:8000" }; }
@@ -286,7 +301,7 @@ class ZoraxyCard extends HTMLElement {
   _section(id, title, icon, content) {
     const open = this._sectionOpen[id] === true;
     return `<div class="section">
-      <div class="sec-header" data-id="${id}">
+      <div class="sec-header" data-id="${id}" role="button" tabindex="0" aria-expanded="${open}">
         <div class="section-title">${this._mdi(icon)}<span>${zoraxyEsc(title)}</span></div>
         <span class="sec-arrow${open ? "" : " closed"}" data-id="${id}">${this._mdi(ZoraxyCard.ICONS.chevronDown)}</span>
       </div>
@@ -307,7 +322,7 @@ class ZoraxyCard extends HTMLElement {
           data-rule-enabled="${r.enabled ? "true" : "false"}"
           title="${r.enabled ? this._t("disableRule") : this._t("enableRule")}">${this._ruleBtnContent(r.enabled)}</button>`;
       return `<div class="row">
-        <div class="row-left"><span class="row-label domain-link" data-href="https://${domain}">${domain}</span></div>
+        <div class="row-left"><span class="row-label domain-link" role="link" tabindex="0" data-href="https://${domain}">${domain}</span></div>
         <div class="row-right">${right}</div>
       </div>`;
     }).join("");
@@ -417,8 +432,16 @@ class ZoraxyCard extends HTMLElement {
       </ha-card>`;
 
     // Sections collapse/expand
+    // Header and domain links are not buttons/anchors: Enter and Space activate them from the keyboard too.
+    const onKey = (el, action) => el.addEventListener("keydown", (e) => {
+      if (e.target !== el || (e.key !== "Enter" && e.key !== " ")) return;
+      e.preventDefault();
+      action(e);
+    });
     this.shadowRoot.querySelectorAll(".sec-header").forEach(h => {
-      h.addEventListener("click", () => this._setSection(h.dataset.id, !this._sectionOpen[h.dataset.id]));
+      const toggle = () => this._setSection(h.dataset.id, !this._sectionOpen[h.dataset.id]);
+      h.addEventListener("click", toggle);
+      onKey(h, toggle);
     });
 
     // Switches
@@ -442,10 +465,12 @@ class ZoraxyCard extends HTMLElement {
 
     // Proxy rule domain links
     this.shadowRoot.querySelectorAll(".domain-link").forEach(el => {
-      el.addEventListener("click", e => {
+      const open = (e) => {
         e.stopPropagation();
         window.open(el.dataset.href, "_blank", "noopener,noreferrer");
-      });
+      };
+      el.addEventListener("click", open);
+      onKey(el, open);
     });
 
     // Proxy rule enable/disable buttons

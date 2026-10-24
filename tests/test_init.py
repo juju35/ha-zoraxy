@@ -110,12 +110,15 @@ async def test_entities_share_one_device(hass, aioclient_mock, entry):
     """Every entity is attached to the same Zoraxy device, which links to the Zoraxy address."""
     mock_zoraxy(aioclient_mock)
     await _setup(hass, entry)
-    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, entry.entry_id)})
+    entities = er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
+    device_ids = {e.device_id for e in entities}
+    assert entities and len(device_ids) == 1
+    # By id, not async_get_device (deprecated in 2026.8, async_get_device_by_identifier is too recent for 2024.12).
+    device = dr.async_get(hass).async_get(device_ids.pop())
     assert device is not None
+    assert (DOMAIN, entry.entry_id) in device.identifiers
     assert (device.name, device.manufacturer, device.model) == ("Zoraxy Reverse Proxy", "tobychui", "Zoraxy")
     assert device.configuration_url == HOST
-    entities = er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
-    assert entities and {e.device_id for e in entities} == {device.id}
 
 
 async def test_switches_read_proxy_options(hass, aioclient_mock, entry):

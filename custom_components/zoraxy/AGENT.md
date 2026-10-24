@@ -63,6 +63,7 @@ Zoraxy v3.3.2 uses **gorilla/csrf** protection. Login flow:
 ### Config entry
 - Version 1.2: `verify_ssl` (new entries: true; entries migrated from 1.1: false, as the TLS certificate was never checked before), unique id = `normalize_host(host)`
 - Options override the data: `scan_interval` (10 s minimum), `verify_ssl`; changing them reloads the entry
+- Reauth stores the new password and lets the update listener reload the entry (it reloads it itself only when that listener is not registered, e.g. the setup failed, or nothing changed)
 - `toggle_proxy_rule` is registered in `async_setup` and resolves the coordinator at each call (the one whose `proxy_list` has the domain); raises `ServiceValidationError` / `HomeAssistantError`, which the card's optimistic rollback relies on
 
 ## API Endpoints Used
@@ -71,7 +72,7 @@ Zoraxy v3.3.2 uses **gorilla/csrf** protection. Login flow:
 |----------|--------|-------|
 | `/api/auth/login` | POST | Login with CSRF token |
 | `/api/proxy/status` | GET | Proxy config, TLS certs (LoadedCerts), port |
-| `/api/proxy/list` | POST | `type=host` or `type=root` — proxy rules |
+| `/api/proxy/list` | POST | `type=host` — proxy rules (`type=root` returns the root object alone, so it is not polled) |
 | `/api/cert/list` | GET | List of certificate domain names |
 | `/api/redirect/list` | GET | HTTP redirections |
 | `/api/access/list` | GET | Access control rules |
@@ -101,7 +102,7 @@ Stale entities are cleaned up at startup via `_cleanup_stale_entities()` using `
 
 ## Lovelace Custom Card (`frontend/zoraxy-card.js`)
 
-Served by the integration at `/zoraxy/zoraxy-card.js` (`async_setup` registers the static path and the dashboard resource, as ha-parcel does). Versions up to 1.2.1 copied it to `/config/www/` and loaded it from `/local/zoraxy-card.js`: that copy is deleted and that resource replaced at startup.
+Served by the integration at `/zoraxy/zoraxy-card.js` (`async_setup` registers the static path and the dashboard resource, as ha-parcel does). Versions up to 1.2.1 copied it to `/config/www/` and loaded it from `/local/zoraxy-card.js`: that copy is deleted and that resource replaced at startup. `_lovelace_resources()` reads `hass.data["lovelace"]` as a dict (before 2025.2) or a dataclass (`mode`, then `resource_mode` from 2025.4); YAML mode falls back to `add_extra_js_url`.
 
 Web component `<zoraxy-card>`. Key design decisions:
 - **Render on change**: the card re-renders only when one of its entities' state objects, the language or the hour changes; the entity list is cached on `hass.entities`
@@ -125,5 +126,5 @@ zoraxy_url: http://zoraxy.local:8000
 - `/api/acme/obtainCert` is a GET (not POST) despite being a mutation
 - All POST API calls require `X-CSRF-Token` header (same token as login)
 - `CookieJar(unsafe=True)` is mandatory for local IP addresses
-- Tests: `pip install -r requirements_test.txt && pytest`
+- Tests: `pip install -r requirements_test.txt && pytest`. Job `tests` runs on Python 3.14, i.e. the latest Home Assistant (2026.3+ needs Python 3.14; 3.13 would silently resolve to 2026.2) and prints its version as an annotation; job `pytest-min-ha` runs the suite on HA 2024.12.0. An autouse fixture (`tests/conftest.py`, `no_deprecated_calls`) fails any test during which Home Assistant reports a deprecated call naming `zoraxy`, and CI turns those reports into annotations. Never look a device up with `DeviceRegistry.async_get_device` (deprecated in 2026.8; `async_get_device_by_identifier` doesn't exist on 2024.12): go through the entities' `device_id`. The http fixture patch only applies where `start_http_server_and_save_config` still exists (gone in 2026.10).
 - `asyncio.timeout` is used (Python 3.11+ native); no `async_timeout` dependency

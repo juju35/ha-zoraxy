@@ -8,7 +8,7 @@ from typing import Any
 
 import aiohttp
 import voluptuous as vol
-from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlow
+from homeassistant.config_entries import ConfigEntry, ConfigEntryState, ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.selector import (
@@ -115,7 +115,15 @@ class ZoraxyConfigFlow(ConfigFlow, domain=DOMAIN):
                 settings.get(CONF_VERIFY_SSL, DEFAULT_VERIFY_SSL),
             )
             if error is None:
-                return self.async_update_reload_and_abort(entry, data_updates={"password": user_input["password"]})
+                # A changed loaded entry is reloaded by its update listener; async_update_reload_and_abort
+                # would reload it a second time. Reload here only when that listener does not run.
+                loaded = entry.state is ConfigEntryState.LOADED
+                changed = self.hass.config_entries.async_update_entry(
+                    entry, data={**entry.data, "password": user_input["password"]}
+                )
+                if not (loaded and changed):
+                    self.hass.config_entries.async_schedule_reload(entry.entry_id)
+                return self.async_abort(reason="reauth_successful")
             errors["base"] = error
 
         return self.async_show_form(

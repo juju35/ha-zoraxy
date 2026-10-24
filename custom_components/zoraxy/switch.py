@@ -7,12 +7,11 @@ from homeassistant.exceptions import HomeAssistantError
 
 from . import ZoraxyDataUpdateCoordinator
 from .api import ZoraxyError
-from .const import DOMAIN
 from .entity import ZoraxyEntity
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
-    coordinator: ZoraxyDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator: ZoraxyDataUpdateCoordinator = entry.runtime_data
     async_add_entities(
         [
             ZoraxyHttpsRedirectSwitch(coordinator, entry),

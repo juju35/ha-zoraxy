@@ -7,12 +7,12 @@ from datetime import datetime
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 
 from . import ZoraxyDataUpdateCoordinator
-from .const import DOMAIN, safe_domain
+from .const import safe_domain
 from .entity import ZoraxyDomainEntity, ZoraxyEntity
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
-    coordinator: ZoraxyDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator: ZoraxyDataUpdateCoordinator = entry.runtime_data
     entities = [
         ZoraxyProxyRulesCountSensor(coordinator, entry),
         ZoraxyActiveRulesCountSensor(coordinator, entry),

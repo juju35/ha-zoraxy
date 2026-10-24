@@ -31,15 +31,24 @@ class ZoraxyBaseSwitch(ZoraxyEntity, SwitchEntity):
         option = status.get("Option", {}) if isinstance(status, dict) else {}
         return bool((option or {}).get(key, False))
 
-    async def _set(self, endpoint: str, enable: bool) -> None:
+    # Zoraxy endpoint, parameter name and HTTP method: each handler reads its own (src/reverseproxy.go).
+    _endpoint: str
+    _field = "enable"
+    _method = "POST"
+
+    async def _set(self, enable: bool) -> None:
         try:
-            await self.coordinator.client.command(endpoint, fields={"enable": "true" if enable else "false"})
+            await self.coordinator.client.command(
+                self._endpoint, self._method, fields={self._field: "true" if enable else "false"}
+            )
         except ZoraxyError as err:
             raise HomeAssistantError(f"Zoraxy: {err}") from err
         await self.coordinator.async_request_refresh()
 
 
 class ZoraxyHttpsRedirectSwitch(ZoraxyBaseSwitch):
+    _endpoint = "/api/proxy/useHttpsRedirect"
+    _field = "set"  # PostBool(r, "set")
     _attr_translation_key = "https_redirect"
     _legacy_name = "Zoraxy - Redirection HTTPS"
 
@@ -52,13 +61,14 @@ class ZoraxyHttpsRedirectSwitch(ZoraxyBaseSwitch):
         return self._option("ForceHttpsRedirect")
 
     async def async_turn_on(self, **_):
-        await self._set("/api/proxy/useHttpsRedirect", True)
+        await self._set(True)
 
     async def async_turn_off(self, **_):
-        await self._set("/api/proxy/useHttpsRedirect", False)
+        await self._set(False)
 
 
 class ZoraxyPort80Switch(ZoraxyBaseSwitch):
+    _endpoint = "/api/proxy/listenPort80"
     _attr_translation_key = "port_80"
     _legacy_name = "Zoraxy - Écoute port 80"
 
@@ -71,13 +81,15 @@ class ZoraxyPort80Switch(ZoraxyBaseSwitch):
         return self._option("ListenOnPort80")
 
     async def async_turn_on(self, **_):
-        await self._set("/api/proxy/listenPort80", True)
+        await self._set(True)
 
     async def async_turn_off(self, **_):
-        await self._set("/api/proxy/listenPort80", False)
+        await self._set(False)
 
 
 class ZoraxyDevModeSwitch(ZoraxyBaseSwitch):
+    _endpoint = "/api/proxy/developmentMode"
+    _method = "GET"  # GetBool(r, "enable") reads the query string only
     _attr_translation_key = "development_mode"
     _legacy_name = "Zoraxy - Mode développement"
 
@@ -90,7 +102,7 @@ class ZoraxyDevModeSwitch(ZoraxyBaseSwitch):
         return self._option("NoCache")
 
     async def async_turn_on(self, **_):
-        await self._set("/api/proxy/developmentMode", True)
+        await self._set(True)
 
     async def async_turn_off(self, **_):
-        await self._set("/api/proxy/developmentMode", False)
+        await self._set(False)

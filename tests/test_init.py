@@ -114,13 +114,40 @@ async def test_switches_read_proxy_options(hass, aioclient_mock, entry):
     assert hass.states.get(f"switch.{P}_mode_developpement").state == "on"
 
 
-async def test_switch_turn_off_posts_to_zoraxy(hass, aioclient_mock, entry):
+@pytest.mark.parametrize(
+    ("entity", "path", "method", "field"),
+    [
+        # HandleUpdateHttpsRedirect: utils.PostBool(r, "set")
+        ("redirection_https", "/api/proxy/useHttpsRedirect", "post", "set"),
+        # HandleUpdatePort80Listener: utils.PostBool(r, "enable")
+        ("ecoute_port_80", "/api/proxy/listenPort80", "post", "enable"),
+        # HandleDevelopmentModeChange: utils.GetBool(r, "enable"), query string only
+        ("mode_developpement", "/api/proxy/developmentMode", "get", "enable"),
+    ],
+)
+@pytest.mark.parametrize("service", ["turn_on", "turn_off"])
+async def test_switch_sends_the_parameter_zoraxy_reads(
+    hass, aioclient_mock, entry, entity, path, method, field, service
+):
+    """Each switch sends the parameter its Zoraxy handler reads, with the right method and nothing else."""
     mock_zoraxy(aioclient_mock)
-    aioclient_mock.post(f"{HOST}/api/proxy/useHttpsRedirect", text="OK")
+    getattr(aioclient_mock, method)(f"{HOST}{path}", text='"OK"')
     await _setup(hass, entry)
-    await hass.services.async_call("switch", "turn_off", {"entity_id": f"switch.{P}_redirection_https"}, blocking=True)
-    _, _, data, _ = _calls(aioclient_mock, "/api/proxy/useHttpsRedirect")[0]
-    assert data == "enable=false"
+    await hass.services.async_call("switch", service, {"entity_id": f"switch.{P}_{entity}"}, blocking=True)
+
+    value = "true" if service == "turn_on" else "false"
+    calls = _calls(aioclient_mock, path, method)
+    assert len(calls) == 1
+    _, url, data, _ = calls[0]
+    assert url.path == path
+    if method == "get":
+        assert dict(url.query) == {field: value}
+        assert data is None
+    else:
+        assert not url.query
+        assert data == f"{field}={value}"
+    # No call went out with another method or parameter name.
+    assert _calls(aioclient_mock, path, "get" if method == "post" else "post") == []
 
 
 async def test_switch_error_is_raised(hass, aioclient_mock, entry):

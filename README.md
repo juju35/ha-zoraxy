@@ -15,7 +15,7 @@ Home Assistant integration and Lovelace card for the [Zoraxy](https://github.com
 ## Features
 
 - Sensors for proxy rules, active rules, TLS certificates, access rules and the inbound port
-- One expiry sensor, one "expiring soon" binary sensor and one ACME renewal button per certificate, created dynamically
+- One expiry sensor, one "expiring soon" binary sensor and one ACME renewal button per certificate found when the integration loads
 - Switches for the HTTPS redirect, the port 80 listener and the development mode
 - A `zoraxy.toggle_proxy_rule` service to enable or disable a proxy rule from an automation
 - A Lovelace card, shipped with the integration and registered automatically:
@@ -133,7 +133,7 @@ data:
 
 ## How it works
 
-The integration logs in to the Zoraxy web API, polls it at the refresh interval and logs in again when the session expires. Certificate entities are created as certificates appear in Zoraxy.
+The integration logs in to the Zoraxy web API, polls it at the refresh interval and logs in again when the session expires. Certificate entities are created when the integration loads: after adding a certificate in Zoraxy, reload the integration (**Settings → Devices & services → Zoraxy → Reload**) to get its entities. Entities of removed certificates are deleted at the next load.
 
 On the card, the button next to each proxy rule calls `zoraxy.toggle_proxy_rule`; the button updates at once and the card refreshes when the integration has polled Zoraxy again. Certificates turn orange under 30 days and red under 7 days.
 

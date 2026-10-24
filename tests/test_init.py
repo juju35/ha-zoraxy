@@ -494,3 +494,28 @@ async def test_card_served(hass, aioclient_mock, entry, hass_client):
     resp = await client.get("/zoraxy/zoraxy-card.js")
     assert resp.status == 200
     assert 'customElements.define("zoraxy-card"' in await resp.text()
+
+
+@pytest.mark.parametrize("key", ["mode", "resource_mode"])
+async def test_card_resource_with_lovelace_data_variants(hass, aioclient_mock, entry, stub_frontend, key):
+    """Before 2025.2 hass.data["lovelace"] is a dict, and 2025.2-2025.3 call the field `mode`."""
+    assert await async_setup_component(hass, "lovelace", {})
+    lovelace = hass.data["lovelace"]
+    resources = lovelace["resources"] if isinstance(lovelace, dict) else lovelace.resources
+    hass.data["lovelace"] = {key: "storage", "resources": resources, "dashboards": {}}
+    mock_zoraxy(aioclient_mock)
+    await _setup(hass, entry)
+    urls = [item["url"] for item in resources.async_items()]
+    assert len(urls) == 1 and urls[0].startswith("/zoraxy/zoraxy-card.js?v=")
+    stub_frontend.assert_not_called()
+
+
+async def test_card_resource_yaml_mode_uses_extra_js(hass, aioclient_mock, entry, stub_frontend):
+    """Resources in YAML mode can't be edited: the card is loaded on every page instead."""
+    from homeassistant.components.lovelace.resources import ResourceYAMLCollection
+
+    assert await async_setup_component(hass, "lovelace", {})
+    hass.data["lovelace"] = {"mode": "yaml", "resources": ResourceYAMLCollection([]), "dashboards": {}}
+    mock_zoraxy(aioclient_mock)
+    await _setup(hass, entry)
+    stub_frontend.assert_called_once()

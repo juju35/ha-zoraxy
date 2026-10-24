@@ -94,9 +94,8 @@ async def _async_register_card(hass: HomeAssistant) -> None:
     url = f"{base_url}?v={digest}"
 
     async def register(_event: Event | None = None) -> None:
-        lovelace = hass.data.get("lovelace")
-        resources = getattr(lovelace, "resources", None)
-        if resources is None or getattr(lovelace, "resource_mode", "storage") != "storage":
+        resources, mode = _lovelace_resources(hass.data.get("lovelace"))
+        if resources is None or mode != "storage":
             # Dashboards in YAML mode: resources can't be edited, load the card on every page.
             add_extra_js_url(hass, url)
             return
@@ -130,6 +129,18 @@ async def _async_register_card(hass: HomeAssistant) -> None:
         await register()
     else:
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, register)
+
+
+def _lovelace_resources(lovelace: Any) -> tuple[Any, str]:
+    """Lovelace resources collection and its mode, whatever the Home Assistant version.
+
+    hass.data["lovelace"] is a dict before 2025.2, then a dataclass whose `mode` field became `resource_mode` in 2025.4.
+    """
+    if isinstance(lovelace, dict):
+        return lovelace.get("resources"), lovelace.get("resource_mode", lovelace.get("mode", "storage"))
+    return getattr(lovelace, "resources", None), getattr(
+        lovelace, "resource_mode", getattr(lovelace, "mode", "storage")
+    )
 
 
 async def _cleanup_stale_entities(hass: HomeAssistant, entry: ConfigEntry, current_certs: list[str]) -> None:

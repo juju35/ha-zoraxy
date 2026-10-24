@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.6.1
+
+### Fixes
+- On Home Assistant versions before 2025.4, the card is added to the dashboard resources again instead of being loaded as an extra script.
+- A re-authentication reloads the integration once instead of twice.
+- The root rule is no longer requested at every update: Zoraxy never returned it in the expected form, so the request was wasted. The entities are unchanged.
+- Card: a failed switch or certificate renewal no longer leaves an uncaught error in the browser console (Home Assistant still shows the error).
+
+### Maintenance
+- Tests run on Home Assistant 2026.10 and on the minimum version (2024.12), and fail on any deprecated Home Assistant call; new tests for the fixes.
+
 ## 1.6.0
 
 ### Changes

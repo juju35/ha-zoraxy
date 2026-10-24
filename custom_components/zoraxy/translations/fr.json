@@ -4,7 +4,7 @@
       "user": {
         "title": "Zoraxy - Configuration",
         "data": {
-          "host": "Adresse de Zoraxy (ex: http://zoraxy.local:8000)",
+          "host": "Adresse de Zoraxy (URL avec le port)",
           "username": "Nom d'utilisateur",
           "password": "Mot de passe",
           "scan_interval": "Intervalle de rafraîchissement (secondes)",

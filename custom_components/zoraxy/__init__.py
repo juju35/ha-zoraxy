@@ -134,7 +134,7 @@ async def _async_register_card(hass: HomeAssistant) -> None:
 def _lovelace_resources(lovelace: Any) -> tuple[Any, str]:
     """Lovelace resources collection and its mode, whatever the Home Assistant version.
 
-    hass.data["lovelace"] is a dict before 2025.2, then a dataclass whose `mode` field became `resource_mode` in 2025.4.
+    hass.data["lovelace"] is a dict before 2025.2, then a dataclass whose `mode` field became `resource_mode` in 2026.2.
     """
     if isinstance(lovelace, dict):
         return lovelace.get("resources"), lovelace.get("resource_mode", lovelace.get("mode", "storage"))

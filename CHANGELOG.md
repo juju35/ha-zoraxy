@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.1
+
+### Fixes
+- `custom:zoraxy-mini-card` is registered on its own: on a page that had already loaded an older copy of the card (a cached file or a leftover resource), the mini card was never defined and Home Assistant reported "Custom element not found: zoraxy-mini-card".
+
 ## 1.7.0
 
 ### What's new

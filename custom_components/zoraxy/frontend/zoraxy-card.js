@@ -1,4 +1,4 @@
-const ZORAXY_CARD_VERSION = '1.6.1';
+const ZORAXY_CARD_VERSION = '1.7.0';
 
 // Escapes a value interpolated into innerHTML, as text or inside a quoted attribute (as parcelEsc in ha-parcel).
 function zoraxyEsc(s) {
@@ -25,6 +25,8 @@ class ZoraxyCard extends HTMLElement {
     server:  "M4,1H20A1,1 0 0,1 21,2V6A1,1 0 0,1 20,7H4A1,1 0 0,1 3,6V2A1,1 0 0,1 4,1M4,9H20A1,1 0 0,1 21,10V14A1,1 0 0,1 20,15H4A1,1 0 0,1 3,14V10A1,1 0 0,1 4,9M4,17H20A1,1 0 0,1 21,18V22A1,1 0 0,1 20,23H4A1,1 0 0,1 3,22V18A1,1 0 0,1 4,17M9,5H10V3H9V5M9,13H10V11H9V13M9,21H10V19H9V21M6,3V5H7V3H6M6,11V13H7V11H6M6,19V21H7V19H6Z",
     redirect:"M14,3L17,6H14.5C12,6 10,8 10,10.5V14.5C8.86,14.18 8,13.19 8,12V10.5C8,6.91 10.91,4 14.5,4L17,3.97L14,1M10,21L7,18H9.5C12,18 14,16 14,13.5V9.5C15.14,9.82 16,10.81 16,12V13.5C16,17.09 13.09,20 9.5,20L7,20.03L10,23",
     chevronDown: "M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z",
+    arrowExpand: "M10,21V19H6.41L10.91,14.5L9.5,13.09L5,17.59V14H3V21H10M14.5,10.91L19,6.41V10H21V3H14V5H17.59L13.09,9.5L14.5,10.91Z",
+    arrowCollapse: "M19.5,3.09L15,7.59V4H13V11H20V9H16.41L20.91,4.5L19.5,3.09M4,13V15H7.59L3.09,19.5L4.5,20.91L9,16.41V20H11V13H4Z",
   };
 
   static LOGO = `<svg class="logo" viewBox="0 0 100 100" role="img" aria-label="Zoraxy">
@@ -51,6 +53,9 @@ class ZoraxyCard extends HTMLElement {
       ed_zoraxy_url: "URL de Zoraxy", ed_entity_prefix: "Préfixe des entités",
       ed_zoraxy_url_helper: "Ouverte au clic sur le titre de la carte",
       ed_entity_prefix_helper: "Partie commune des entités, par exemple zoraxy_reverse_proxy_zoraxy",
+      zoomIn: "Afficher la carte complète", zoomOut: "Revenir à la vue compacte",
+      ruleCount: "{a}/{n} règles", certCount: "{n} certs",
+      ed_zoom: "Bouton détail", ed_zoom_helper: "Bascule vers la carte complète et revient",
     },
     en: {
       active: "Active", inactive: "Inactive",
@@ -65,6 +70,9 @@ class ZoraxyCard extends HTMLElement {
       ed_zoraxy_url: "Zoraxy URL", ed_entity_prefix: "Entity prefix",
       ed_zoraxy_url_helper: "Opened when clicking the card title",
       ed_entity_prefix_helper: "Common part of the entity IDs, for example zoraxy_reverse_proxy_zoraxy",
+      zoomIn: "Show the full card", zoomOut: "Back to the compact view",
+      ruleCount: "{a}/{n} rules", certCount: "{n} certs",
+      ed_zoom: "Detail button", ed_zoom_helper: "Switches to the full card and back",
     },
   };
 
@@ -331,22 +339,32 @@ class ZoraxyCard extends HTMLElement {
     }).join("");
   }
 
-  _buildCerts(prefix) {
+  // Certificate expiry sensors, with the days left (null when unknown).
+  _certSensors(prefix) {
     const certPrefix = `sensor.${prefix}_cert_`;
-    const sensors = this._entityIds().filter(id => id.startsWith(certPrefix) && this._hass.states[id]);
+    return this._entityIds()
+      .filter((id) => id.startsWith(certPrefix) && this._hass.states[id])
+      .map((id) => ({ id, suffix: id.slice(certPrefix.length), days: this._daysUntil(this._state(id)) }));
+  }
+
+  // Chip class for a certificate countdown: red under 7 days, orange under 30.
+  _daysCls(days) {
+    return days === null ? "idle" : days < 7 ? "crit" : days < 30 ? "warn" : "ok";
+  }
+
+  _daysLabel(days) {
+    if (days === null) return "?";
+    return days < 0 ? this._t("expired") : this._t("daysLeft").replace("{n}", days);
+  }
+
+  _buildCerts(prefix) {
+    const sensors = this._certSensors(prefix);
     if (!sensors.length) return `<p class="empty">${this._t("noCerts")}</p>`;
-    return sensors.map(sensorId => {
-      const suffix    = sensorId.slice(certPrefix.length);
-      const days      = this._daysUntil(this._state(sensorId));
+    return sensors.map(({ id: sensorId, suffix, days }) => {
       const isExpiring = this._isOn(`binary_sensor.${prefix}_cert_expirant_${suffix}`);
       const domain    = this._attr(sensorId, "domain") || suffix.replace(/_/g, ".");
       const btnId     = `button.${prefix}_renouveler_${suffix}`;
-      let daysLabel = "?", daysCls = "idle";
-      if (days !== null) {
-        daysLabel = days < 0 ? this._t("expired") : this._t("daysLeft").replace("{n}", days);
-        daysCls = days < 7 ? "crit" : days < 30 ? "warn" : "ok";
-      }
-      const right = `${this._chip(daysLabel, daysCls)}
+      const right = `${this._chip(this._daysLabel(days), this._daysCls(days))}
         <button class="icon-btn renew-btn" data-entity="${zoraxyEsc(btnId)}" title="${this._t("renew")}">
           ${this._mdi(ZoraxyCard.ICONS.refresh)}
         </button>`;
@@ -370,10 +388,21 @@ class ZoraxyCard extends HTMLElement {
 
   // ── Full render ────────────────────────────────────────────────────────────
 
-  _render() {
-    if (!this._hass || !this._config) return;
+  // Remembers what this render shows, so that `set hass` skips the next ones until something changes.
+  _snapshot() {
     this._states = this._entityIds().map((id) => this._hass.states[id]);
     this._renderKey = `${this._lang()}|${Math.floor(Date.now() / 3600000)}`;
+  }
+
+  // Card title, a link to the Zoraxy web interface when `zoraxy_url` is an http(s) address.
+  _nameLink() {
+    const url = zoraxySafeUrl(this._config.zoraxy_url);
+    return `<a class="name" ${url ? `href="${zoraxyEsc(url)}" target="_blank" rel="noopener noreferrer"` : ""}>Zoraxy</a>`;
+  }
+
+  _render() {
+    if (!this._hass || !this._config) return;
+    this._snapshot();
 
     const p   = this._prefix();
     const sp  = `sensor.${p}`;
@@ -403,12 +432,12 @@ class ZoraxyCard extends HTMLElement {
     const metric = (value, label) => `<div class="tile"><div class="mv">${zoraxyEsc(value)}</div><div class="ml">${label}</div></div>`;
 
     this.shadowRoot.innerHTML = `
-      <style>${ZoraxyCard.CSS}</style>
+      <style>${this.constructor.CSS}</style>
       <ha-card>
         <div class="header">
           ${ZoraxyCard.LOGO}
           <div class="titles">
-            <a class="name" ${zoraxyUrl ? `href="${zoraxyEsc(zoraxyUrl)}" target="_blank" rel="noopener noreferrer"` : ""}>Zoraxy</a>
+            ${this._nameLink()}
             <div class="sub">${zoraxyEsc(sub)}</div>
           </div>
           <span id="status">${this._statusChip(proxyRunning)}</span>
@@ -490,15 +519,164 @@ class ZoraxyCard extends HTMLElement {
   }
 }
 
-// ── zoraxy-card-editor ────────────────────────────────────────────────────────
-const ZORAXY_EDITOR_SCHEMA = [
-  { name: "zoraxy_url", selector: { text: { type: "url" } } },
-  { name: "entity_prefix", selector: { text: {} } },
-];
+// ── zoraxy-mini-card ──────────────────────────────────────────────────────────
+// What the full card shows, on two lines: the logo, title and status pill, then one chip per key figure or alert.
+// Its detail button (top right, `zoom: false` removes it) switches it to the full card and back; a click anywhere
+// else brings it back too, unless it lands in a dialog opened from the card (more-info).
+class ZoraxyMiniCard extends ZoraxyCard {
+  static CSS = `${ZoraxyCard.CSS}
+    ha-card:has(.mini) { padding: 8px 10px; }
+    .mini { display: flex; align-items: center; gap: 10px; }
+    .mini .logo { width: 32px; height: 32px; }
+    .body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+    .head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .mini .name { flex: 0 1 auto; font-size: 14px; line-height: 18px; }
+    .head #status { flex: none; margin-left: auto; }
+    .rs { display: flex; flex-wrap: wrap; gap: 2px 4px; margin-left: -4px; }
+    .rs:empty { display: none; }
+    .r { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 3px; padding: 0 6px 0 4px; border-radius: 999px;
+         font-size: 12px; font-weight: 500; line-height: 18px; white-space: nowrap; color: var(--primary-text-color); }
+    .r .icon { width: 13px; height: 13px; color: var(--c); }
+    .r.pill { color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); }
+    .r:hover { background: color-mix(in srgb, var(--c) 20%, var(--secondary-background-color, transparent)); }
+    .r:focus-visible { outline: 2px solid var(--zx-accent); outline-offset: 2px; }
+    .zoom { all: unset; flex: none; cursor: pointer; width: 24px; height: 24px; margin: -4px -4px -4px 0; border-radius: 50%;
+            display: grid; place-items: center; color: var(--secondary-text-color); }
+    .zoom .icon { width: 16px; height: 16px; }
+    .zoom:hover { background: color-mix(in srgb, var(--secondary-text-color) 16%, transparent); color: var(--primary-text-color); }
+    .zoom:focus-visible { outline: 2px solid var(--zx-accent); outline-offset: 1px; }
+    .header .zoom { align-self: flex-start; margin: -6px -6px 0 0; }
+  `;
 
-const ZORAXY_EDITOR_DEFAULTS = { entity_prefix: "zoraxy_reverse_proxy_zoraxy" };
+  static getConfigElement() { return document.createElement("zoraxy-mini-card-editor"); }
 
+  constructor() {
+    super();
+    this._zoomed = false;
+    this._onUnzoom = (ev) => {
+      const path = ev.composedPath();
+      if (!this._zoomed || path.includes(this)) return;
+      if (path.some((n) => ["ha-more-info-dialog", "ha-dialog", "dialog"].includes(n.localName))) return;
+      this._zoomed = false;
+      this._render();
+    };
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    document.addEventListener("click", this._onUnzoom, true);
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    document.removeEventListener("click", this._onUnzoom, true);
+  }
+
+  setConfig(config) {
+    if (config?.zoom != null && typeof config.zoom !== "boolean") throw new Error("zoom must be true or false");
+    super.setConfig(config);
+  }
+
+  getCardSize() { return this._zoomed ? super.getCardSize() : 2; }
+  getGridOptions() { return { columns: 12, min_columns: 4, rows: "auto" }; }
+
+  // A chip: plain (tinted icon) while all is well, a tinted pill when it needs a look. It opens the entity's more-info.
+  _miniChip(entity, icon, text, cls, pill) {
+    return `<button class="r ${cls}${pill ? " pill" : ""}" data-entity="${zoraxyEsc(entity)}" title="${zoraxyEsc(text)}">${this._mdi(
+      ZoraxyCard.ICONS[icon],
+    )}${zoraxyEsc(text)}</button>`;
+  }
+
+  _miniChips() {
+    const p = this._prefix();
+    const sp = `sensor.${p}`;
+    const bp = `binary_sensor.${p}`;
+    const chips = [];
+    const total = this._state(`${sp}_regles_proxy`);
+    const active = this._state(`${sp}_regles_actives`);
+    chips.push(this._miniChip(`${sp}_regles_proxy`, "router", this._t("ruleCount").replace("{a}", active).replace("{n}", total), "ok"));
+    // Certificates expiring within 30 days get a chip each, the closest first; otherwise one chip with their count.
+    const expiring = this._certSensors(p)
+      .filter(({ suffix, days }) => (days !== null && days < 30) || this._isOn(`${bp}_cert_expirant_${suffix}`))
+      .sort((a, b) => (a.days ?? 0) - (b.days ?? 0));
+    for (const { id, suffix, days } of expiring) {
+      const domain = this._attr(id, "domain") || suffix.replace(/_/g, ".");
+      const cls = days !== null && days < 7 ? "crit" : "warn";
+      chips.push(this._miniChip(id, "cert", `${domain} · ${this._daysLabel(days)}`, cls, true));
+    }
+    if (!expiring.length) {
+      chips.push(this._miniChip(`${sp}_certificats_tls`, "cert", this._t("certCount").replace("{n}", this._state(`${sp}_certificats_tls`)), "ok"));
+    }
+    chips.push(this._miniChip(`${sp}_port_entrant`, "web", `${this._t("port")} ${this._state(`${sp}_port_entrant`)}`, "idle"));
+    // Controls only show when they need a look: HTTPS redirect off, development mode (no cache) on.
+    if (!this._isOn(`${bp}_redirection_https`)) {
+      chips.push(this._miniChip(`${bp}_redirection_https`, "lock", `${this._t("httpsRedirect")} ${this._t("off")}`, "warn", true));
+    }
+    if (this._isOn(`${bp}_mode_developpement`)) {
+      chips.push(this._miniChip(`${bp}_mode_developpement`, "code", `${this._t("devMode")} ${this._t("on")}`, "warn", true));
+    }
+    return chips.join("");
+  }
+
+  _render() {
+    if (!this._hass || !this._config) return;
+    if (this._zoomed) super._render();
+    else this._renderMini();
+    this._addZoom();
+  }
+
+  _renderMini() {
+    this._snapshot();
+    this.shadowRoot.innerHTML = `
+      <style>${this.constructor.CSS}</style>
+      <ha-card>
+        <div class="mini">
+          ${ZoraxyCard.LOGO}
+          <div class="body">
+            <div class="head">
+              ${this._nameLink()}
+              <span id="status">${this._statusChip(this._isOn(`binary_sensor.${this._prefix()}_proxy_actif`))}</span>
+            </div>
+            <div class="rs">${this._miniChips()}</div>
+          </div>
+        </div>
+      </ha-card>`;
+    this.shadowRoot.querySelectorAll(".r").forEach((el) => {
+      el.addEventListener("click", () => {
+        this.dispatchEvent(new CustomEvent("hass-more-info", { detail: { entityId: el.dataset.entity }, bubbles: true, composed: true }));
+      });
+    });
+  }
+
+  // Detail button at the end of the header, top right in both views.
+  _addZoom() {
+    const head = this._config.zoom !== false && this.shadowRoot.querySelector(".head, .header");
+    if (!head) return;
+    const button = document.createElement("button");
+    button.className = "zoom";
+    button.title = this._t(this._zoomed ? "zoomOut" : "zoomIn");
+    button.setAttribute("aria-label", button.title);
+    button.innerHTML = this._mdi(ZoraxyCard.ICONS[this._zoomed ? "arrowCollapse" : "arrowExpand"]);
+    button.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      this._zoomed = !this._zoomed;
+      this._render();
+      // Keyboard use (Enter / Space: no click count) keeps the focus on the button that replaced this one.
+      if (ev.detail === 0) this.shadowRoot.querySelector(".zoom")?.focus();
+    });
+    head.appendChild(button);
+  }
+}
+
+// ── Editors ───────────────────────────────────────────────────────────────────
 class ZoraxyCardEditor extends HTMLElement {
+  static SCHEMA = [
+    { name: "zoraxy_url", selector: { text: { type: "url" } } },
+    { name: "entity_prefix", selector: { text: {} } },
+  ];
+
+  static DEFAULTS = { entity_prefix: "zoraxy_reverse_proxy_zoraxy" };
+
   setConfig(config) {
     this._config = Object.assign({}, config);
     this._render();
@@ -516,7 +694,7 @@ class ZoraxyCardEditor extends HTMLElement {
       const lang = (this._hass.locale?.language || this._hass.language || "en").toLowerCase().startsWith("fr") ? "fr" : "en";
       const t = (key) => ZoraxyCard.I18N[lang][key];
       this._form = document.createElement("ha-form");
-      this._form.schema = ZORAXY_EDITOR_SCHEMA;
+      this._form.schema = this.constructor.SCHEMA;
       this._form.computeLabel = (field) => t(`ed_${field.name}`) || field.name;
       this._form.computeHelper = (field) => t(`ed_${field.name}_helper`);
       this._form.addEventListener("value-changed", this._valueChanged.bind(this));
@@ -524,15 +702,16 @@ class ZoraxyCardEditor extends HTMLElement {
     }
     this._form.hass = this._hass;
     // Show the defaults as set, so the fields match what the card does.
-    this._form.data = Object.assign({}, ZORAXY_EDITOR_DEFAULTS, this._config);
+    this._form.data = Object.assign({}, this.constructor.DEFAULTS, this._config);
   }
 
   _valueChanged(ev) {
     ev.stopPropagation();
     const value = Object.assign({}, ev.detail.value);
     // Keep the YAML short: drop options left empty or at their default.
-    Object.keys(ZORAXY_EDITOR_DEFAULTS).forEach((key) => {
-      if (value[key] === ZORAXY_EDITOR_DEFAULTS[key]) delete value[key];
+    const defaults = this.constructor.DEFAULTS;
+    Object.keys(defaults).forEach((key) => {
+      if (value[key] === defaults[key]) delete value[key];
     });
     ["zoraxy_url", "entity_prefix"].forEach((key) => { if (!value[key]) delete value[key]; });
     this._config = value;
@@ -540,13 +719,24 @@ class ZoraxyCardEditor extends HTMLElement {
   }
 }
 
+// The mini card's editor: the full card's fields, plus the detail button.
+class ZoraxyMiniCardEditor extends ZoraxyCardEditor {
+  static SCHEMA = [...ZoraxyCardEditor.SCHEMA, { name: "zoom", selector: { boolean: {} } }];
+  static DEFAULTS = { ...ZoraxyCardEditor.DEFAULTS, zoom: true };
+}
+
 if (!customElements.get("zoraxy-card-editor")) {
   customElements.define("zoraxy-card-editor", ZoraxyCardEditor);
+}
+if (!customElements.get("zoraxy-mini-card-editor")) {
+  customElements.define("zoraxy-mini-card-editor", ZoraxyMiniCardEditor);
 }
 
 if (!customElements.get("zoraxy-card")) {
   customElements.define("zoraxy-card", ZoraxyCard);
   window.customCards = window.customCards || [];
   window.customCards.push({ type: "zoraxy-card", name: "Zoraxy Card", description: "Status, controls, certificates and proxy rules of a Zoraxy reverse proxy", preview: true, documentationURL: "https://github.com/juju35/ha-zoraxy" });
+  customElements.define("zoraxy-mini-card", ZoraxyMiniCard);
+  window.customCards.push({ type: "zoraxy-mini-card", name: "Zoraxy Mini Card", description: "Zoraxy status, rules and certificate alerts on two lines, with a detail button showing the full card", preview: true, documentationURL: "https://github.com/juju35/ha-zoraxy" });
   console.info(`%c ZORAXY-CARD %c v${ZORAXY_CARD_VERSION} `, "color:#bfdbfe;background:#0f172a;font-weight:700", "color:#0f172a;background:#bfdbfe");
 }

@@ -497,7 +497,9 @@ async def test_card_served(hass, aioclient_mock, entry, hass_client):
     client = await hass_client()
     resp = await client.get("/zoraxy/zoraxy-card.js")
     assert resp.status == 200
-    assert 'customElements.define("zoraxy-card"' in await resp.text()
+    text = await resp.text()
+    assert 'customElements.define("zoraxy-card"' in text
+    assert 'customElements.define("zoraxy-mini-card"' in text
 
 
 @pytest.mark.parametrize("as_dict", [True, False])

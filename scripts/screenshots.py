@@ -1,9 +1,10 @@
-"""Render the Zoraxy card with mock entities and save the README screenshots.
+"""Render the Zoraxy card and mini card with mock entities and save the README screenshots.
 
 Usage: python scripts/screenshots.py  (needs `pip install playwright` and `playwright install chromium`)
 The clock is frozen so certificate countdowns stay the same.
 """
 
+import os
 from pathlib import Path
 
 from playwright.sync_api import sync_playwright
@@ -85,6 +86,11 @@ STATES = dict(
 SHOTS = [
     {"file": "card", "theme": "light", "lang": "en", "open": ["certs"]},
     {"file": "card-dark", "theme": "dark", "lang": "en", "open": ["rules"]},
+    # The mini card, and the same card zoomed in (its detail button clicked).
+    {"file": "mini", "theme": "light", "lang": "en", "tag": "zoraxy-mini-card"},
+    {"file": "mini-dark", "theme": "dark", "lang": "en", "tag": "zoraxy-mini-card"},
+    {"file": "mini-zoom", "theme": "light", "lang": "en", "tag": "zoraxy-mini-card", "zoom": True},
+    {"file": "mini-zoom-dark", "theme": "dark", "lang": "en", "tag": "zoraxy-mini-card", "zoom": True},
 ]
 
 
@@ -101,7 +107,8 @@ def main():
     out_dir = ROOT / "screenshots"
     out_dir.mkdir(exist_ok=True)
     with sync_playwright() as p:
-        browser = p.chromium.launch()
+        # CHROMIUM_PATH: an already installed Chromium, instead of the one `playwright install` downloads.
+        browser = p.chromium.launch(executable_path=os.environ.get("CHROMIUM_PATH") or None)
         context = browser.new_context(
             device_scale_factor=2,
             viewport={"width": 1000, "height": 2400},
@@ -116,17 +123,28 @@ def main():
             page.add_script_tag(content=HA_CARD)
             page.add_script_tag(content=CARD_JS)
             page.evaluate(
-                """({states, lang, open}) => {
-                  const el = document.createElement("zoraxy-card");
-                  el.setConfig({type: "custom:zoraxy-card", zoraxy_url: "https://proxy.example.org"});
+                """({states, lang, open, tag, zoom}) => {
+                  const el = document.createElement(tag);
+                  el.setConfig({type: `custom:${tag}`, zoraxy_url: "https://proxy.example.org"});
                   el.hass = {states, language: lang, locale: {language: lang}, callService: () => Promise.resolve()};
                   document.getElementById("root").appendChild(el);
-                  for (const id of open) el.shadowRoot.querySelector(`.sec-header[data-id="${id}"]`).click();
+                  // A mouse click (detail: 1), so that no focus ring shows on the new button.
+                  const click = (node) => node.dispatchEvent(new MouseEvent("click", {bubbles: true, composed: true, detail: 1}));
+                  if (zoom) click(el.shadowRoot.querySelector(".zoom"));
+                  for (const id of open) click(el.shadowRoot.querySelector(`.sec-header[data-id="${id}"]`));
                 }""",
-                {"states": STATES, "lang": shot["lang"], "open": shot["open"]},
+                {
+                    "states": STATES,
+                    "lang": shot["lang"],
+                    "open": shot.get("open", []),
+                    "tag": shot.get("tag", "zoraxy-card"),
+                    "zoom": shot.get("zoom", False),
+                },
             )
             page.wait_for_timeout(300)
-            page.locator("zoraxy-card").screenshot(path=str(out_dir / f"{shot['file']}.png"), animations="disabled")
+            page.locator(shot.get("tag", "zoraxy-card")).screenshot(
+                path=str(out_dir / f"{shot['file']}.png"), animations="disabled"
+            )
             print(f"screenshots/{shot['file']}.png")
             page.close()
         browser.close()

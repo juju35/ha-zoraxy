@@ -1,4 +1,4 @@
-const ZORAXY_CARD_VERSION = '1.7.0';
+const ZORAXY_CARD_VERSION = '1.7.1';
 
 // Escapes a value interpolated into innerHTML, as text or inside a quoted attribute (as parcelEsc in ha-parcel).
 function zoraxyEsc(s) {
@@ -732,11 +732,15 @@ if (!customElements.get("zoraxy-mini-card-editor")) {
   customElements.define("zoraxy-mini-card-editor", ZoraxyMiniCardEditor);
 }
 
+// Each card is registered on its own: a page that already loaded an older copy of this file (a stale resource
+// or a cached version without the mini card) still gets the mini card from this one.
+window.customCards = window.customCards || [];
 if (!customElements.get("zoraxy-card")) {
   customElements.define("zoraxy-card", ZoraxyCard);
-  window.customCards = window.customCards || [];
   window.customCards.push({ type: "zoraxy-card", name: "Zoraxy Card", description: "Status, controls, certificates and proxy rules of a Zoraxy reverse proxy", preview: true, documentationURL: "https://github.com/juju35/ha-zoraxy" });
+  console.info(`%c ZORAXY-CARD %c v${ZORAXY_CARD_VERSION} `, "color:#bfdbfe;background:#0f172a;font-weight:700", "color:#0f172a;background:#bfdbfe");
+}
+if (!customElements.get("zoraxy-mini-card")) {
   customElements.define("zoraxy-mini-card", ZoraxyMiniCard);
   window.customCards.push({ type: "zoraxy-mini-card", name: "Zoraxy Mini Card", description: "Zoraxy status, rules and certificate alerts on two lines, with a detail button showing the full card", preview: true, documentationURL: "https://github.com/juju35/ha-zoraxy" });
-  console.info(`%c ZORAXY-CARD %c v${ZORAXY_CARD_VERSION} `, "color:#bfdbfe;background:#0f172a;font-weight:700", "color:#0f172a;background:#bfdbfe");
 }

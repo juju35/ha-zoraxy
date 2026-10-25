@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.7.0
+
+### What's new
+- Mini card `custom:zoraxy-mini-card`, in the same file as the full card (no extra resource): the logo, title and status pill on one line, then chips for the active and total proxy rules, the certificates (one orange or red chip per certificate expiring within 30 days, the closest first), the inbound port, and an orange chip when the HTTPS redirect is off or the development mode on. A chip opens its entity.
+- Detail button at the top right of the mini card: it switches to the full card, with the same configuration, and back; a click anywhere else on the page brings the compact view back, but not a click in a dialog opened from the card. `zoom: false` removes the button.
+- Visual editor for the mini card: the full card's fields plus the detail button, in English and French.
+
+### Maintenance
+- `scripts/screenshots.py` also renders the mini card and its zoomed view, and takes `CHROMIUM_PATH` to use an installed Chromium.
+
 ## 1.6.1
 
 ### Fixes

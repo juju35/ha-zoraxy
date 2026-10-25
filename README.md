@@ -23,7 +23,8 @@ Home Assistant integration and Lovelace card for the [Zoraxy](https://github.com
   - direct controls (HTTPS redirect, port 80, dev mode)
   - certificates with days left and a renewal button
   - proxy rules with an on/off button per rule, and HTTP redirects
-- Visual editor for the card, light and dark mode, English and French
+- A mini card in the same file: status and key figures on two lines, certificates expiring soon highlighted, and a detail button showing the full card
+- Visual editors for both cards, light and dark mode, English and French
 - Automatic reconnection when the Zoraxy session expires (about one hour)
 
 ## Prerequisites
@@ -53,7 +54,7 @@ Or manually:
 1. Copy `custom_components/zoraxy/` from the [latest release](https://github.com/juju35/ha-zoraxy/releases/latest) to `/config/custom_components/zoraxy/`
 2. Restart Home Assistant
 
-The card `zoraxy-card.js` is part of the integration: it is served at `/zoraxy/zoraxy-card.js` and added to the dashboard resources at startup (nothing is written to `/config/www/`). If the automatic registration fails, add it in **Settings → Dashboards → ⋮ → Resources**:
+The card file `zoraxy-card.js` (full card and mini card) is part of the integration: it is served at `/zoraxy/zoraxy-card.js` and added to the dashboard resources at startup (nothing is written to `/config/www/`). If the automatic registration fails, add it in **Settings → Dashboards → ⋮ → Resources**:
 - URL: `/zoraxy/zoraxy-card.js`
 - Type: **JavaScript Module**
 
@@ -85,6 +86,31 @@ zoraxy_url: http://zoraxy.local:8000
 |---|---|---|
 | `zoraxy_url` | — | Zoraxy web interface (`http://` or `https://`), opened from the card title and shown under it |
 | `entity_prefix` | `zoraxy_reverse_proxy_zoraxy` | Common part of the entity ids |
+
+### Mini card
+
+`custom:zoraxy-mini-card` shows the full card's essentials on two lines, for a compact dashboard: the logo, title and status pill, then a chip per key figure:
+
+- active / total proxy rules
+- the number of certificates, or one chip per certificate expiring within 30 days (orange, red under 7 days), the closest first
+- the inbound port
+- *HTTPS redirect Off* and *Dev mode On*, in orange, only when they apply
+
+Chips needing attention are tinted; a click on a chip opens its entity. The **detail** button (top right) switches the card to the full [card](#card), with the same configuration, and back, as does a click anywhere else on the page (`zoom: false` removes it). Search for **Zoraxy Mini Card** when adding a card, or in YAML:
+
+```yaml
+type: custom:zoraxy-mini-card
+zoraxy_url: http://zoraxy.local:8000
+zoom: true
+```
+
+Same options as the full card, plus:
+
+| Option | Default | Description |
+|---|---|---|
+| `zoom` | `true` | Detail button switching to the full card and back |
+
+![zoraxy-mini-card](https://raw.githubusercontent.com/juju35/ha-zoraxy/main/screenshots/mini.png)
 
 ### Entities
 
@@ -131,6 +157,14 @@ data:
 |---|---|
 | ![card](screenshots/card.png) | ![card dark](screenshots/card-dark.png) |
 
+| Mini card | Mini card (dark) |
+|---|---|
+| ![mini](screenshots/mini.png) | ![mini dark](screenshots/mini-dark.png) |
+
+| Mini card zoomed in | Mini card zoomed in (dark) |
+|---|---|
+| ![mini zoomed](screenshots/mini-zoom.png) | ![mini zoomed dark](screenshots/mini-zoom-dark.png) |
+
 ## How it works
 
 The integration logs in to the Zoraxy web API, polls it at the refresh interval and logs in again when the session expires. Certificate entities are created when the integration loads: after adding a certificate in Zoraxy, reload the integration (**Settings → Devices & services → Zoraxy → Reload**) to get its entities. Entities of removed certificates are deleted at the next load.
@@ -149,7 +183,7 @@ logger:
 
 ```bash
 pip install playwright && playwright install chromium
-python scripts/screenshots.py   # renders the card with mock entities into screenshots/
+python scripts/screenshots.py   # renders both cards with mock entities into screenshots/ (CHROMIUM_PATH: an installed Chromium)
 ```
 
 ### Releasing

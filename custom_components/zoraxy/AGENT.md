@@ -112,6 +112,8 @@ Web component `<zoraxy-card>`. Key design decisions:
 - **I18N**: `static I18N = {fr: {...}, en: {...}}` + `_t(key)` via `hass.locale.language`
 - **Static assets**: `ICONS`, `LOGO`, `BADGE_COLORS`, `CSS` are static class properties (created once)
 
+Web component `<zoraxy-mini-card>` (same file): `ZoraxyMiniCard extends ZoraxyCard`, two lines (logo, name, status pill; chips from `_miniChips()`). `_zoomed` switches `_render()` to the full card's `super._render()`; `_addZoom()` appends the detail button to `.head` / `.header` after each render (`zoom: false`: none). A capture-phase document click outside the card and outside any `ha-more-info-dialog` / `ha-dialog` / `dialog` unzooms it. Its editor `ZoraxyMiniCardEditor` extends the full card's editor (`SCHEMA` + `zoom`, `DEFAULTS`).
+
 Config YAML:
 ```yaml
 type: custom:zoraxy-card

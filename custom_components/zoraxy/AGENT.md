@@ -102,7 +102,7 @@ Stale entities are cleaned up at startup via `_cleanup_stale_entities()` using `
 
 ## Lovelace Custom Card (`frontend/zoraxy-card.js`)
 
-Served by the integration at `/zoraxy/zoraxy-card.js` (`async_setup` registers the static path and the dashboard resource, as ha-parcel does). Versions up to 1.2.1 copied it to `/config/www/` and loaded it from `/local/zoraxy-card.js`: that copy is deleted and that resource replaced at startup. `_lovelace_resources()` reads `hass.data["lovelace"]` as a dict (before 2025.2) or a dataclass (`mode`, then `resource_mode` from 2025.4); YAML mode falls back to `add_extra_js_url`.
+Served by the integration at `/zoraxy/zoraxy-card.js` (`async_setup` registers the static path and the dashboard resource, as ha-parcel does). Versions up to 1.2.1 copied it to `/config/www/` and loaded it from `/local/zoraxy-card.js`: that copy is deleted and that resource replaced at startup. `_lovelace_resources()` reads `hass.data["lovelace"]` as a dict (before 2025.2) or a dataclass (`mode` from 2025.2, then `resource_mode` from 2026.2); YAML mode falls back to `add_extra_js_url`.
 
 Web component `<zoraxy-card>`. Key design decisions:
 - **Render on change**: the card re-renders only when one of its entities' state objects, the language or the hour changes; the entity list is cached on `hass.entities`

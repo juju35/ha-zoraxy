@@ -5,6 +5,9 @@
 ### Changes
 - Full card: the Zoraxy logo in the header is 40 px, like the header icon of the other cards (32 px on the mini card, unchanged).
 - Mini card: the title uses the full card's size (16 px, line height 1.25) instead of 14 px; a long title still ends with an ellipsis.
+- Full card: the section title icons (Controls, Certificates, Proxy rules, Redirections) are 16 px, like the other cards; a closed section takes no extra space below its title.
+- Full card: the certificate renew buttons use the neutral tile colour, and a proxy rule's On / Off button is tinted with its state colour, instead of an outlined button.
+- Full card: 8 px between the header and the figures (was 4 px). Mini card: 12 px around the content (was 8 px at the top and 10 px on the sides), the logo at the top.
 
 ## 1.7.1
 

@@ -90,7 +90,7 @@ class ZoraxyCard extends HTMLElement {
     .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--c, var(--zx-ok)); flex: none; display: inline-block; }
     .chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 12px; font-size: 11px; font-weight: 500;
             background: color-mix(in srgb, var(--c, var(--zx-ok)) 15%, transparent); color: var(--c, var(--zx-ok)); white-space: nowrap; }
-    .header { display: flex; align-items: center; gap: 10px; padding: 12px 12px 4px; }
+    .header { display: flex; align-items: center; gap: 10px; padding: 12px 12px 8px; }
     .logo { width: 40px; height: 40px; flex: none; }
     .titles { flex: 1; min-width: 0; }
     .name { font-size: 16px; font-weight: 500; line-height: 1.25; color: var(--primary-text-color); text-decoration: none;
@@ -103,9 +103,11 @@ class ZoraxyCard extends HTMLElement {
             background: var(--secondary-background-color, rgba(127,127,127,.08)); }
     .mv { font-size: 16px; font-weight: 500; color: var(--primary-text-color); }
     .ml { font-size: 11px; color: var(--secondary-text-color); }
-    .sec-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 8px; }
+    .sec-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 6px; }
+    .sec-header[aria-expanded="false"] { margin-bottom: 0; }
     .section-title { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; text-transform: uppercase;
                      letter-spacing: .04em; color: var(--secondary-text-color); }
+    .section-title .icon { width: 16px; height: 16px; }
     .sec-arrow { color: var(--secondary-text-color); display: flex; transition: transform .2s ease; }
     .sec-arrow.closed { transform: rotate(-90deg); }
     .controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
@@ -126,12 +128,16 @@ class ZoraxyCard extends HTMLElement {
     .domain-link:hover { text-decoration: underline; }
     .sec-header:focus-visible, .domain-link:focus-visible { outline: 2px solid var(--zx-accent); outline-offset: 2px; border-radius: 4px; }
     .empty { color: var(--secondary-text-color); font-size: 13px; padding: 4px 0; margin: 0; }
-    .icon-btn { display: inline-flex; align-items: center; justify-content: center; gap: 4px; background: none; cursor: pointer;
-                border: 1px solid var(--divider-color); border-radius: 10px; padding: 4px 8px; font-family: inherit;
-                font-size: 12px; font-weight: 500; color: var(--c, var(--primary-text-color)); transition: background .15s; }
-    .icon-btn:hover { background: color-mix(in srgb, var(--zx-accent) 15%, transparent); }
+    /* Neutral button (renew); a proxy rule's On / Off button is tinted with its state colour. */
+    .icon-btn { display: inline-flex; align-items: center; justify-content: center; gap: 4px; cursor: pointer;
+                border: 1px solid transparent; border-radius: 10px; padding: 4px 8px; font-family: inherit;
+                font-size: 12px; font-weight: 500; color: var(--primary-text-color); transition: background .15s;
+                background: var(--secondary-background-color, rgba(127,127,127,.12)); }
+    .icon-btn:hover { background: color-mix(in srgb, var(--primary-text-color) 8%, var(--secondary-background-color, transparent)); }
+    .icon-btn.rule-btn { color: var(--c); background: color-mix(in srgb, var(--c) 16%, transparent); }
+    .icon-btn.rule-btn:hover { background: color-mix(in srgb, var(--c) 24%, transparent); }
     .icon-btn:disabled { opacity: .5; cursor: not-allowed; }
-    .icon-btn.busy { --c: var(--zx-warn); }
+    .icon-btn.busy { color: var(--zx-warn); }
   `;
 
   // ── Lifecycle ──────────────────────────────────────────────────────────────
@@ -525,9 +531,10 @@ class ZoraxyCard extends HTMLElement {
 // else brings it back too, unless it lands in a dialog opened from the card (more-info).
 class ZoraxyMiniCard extends ZoraxyCard {
   static CSS = `${ZoraxyCard.CSS}
-    ha-card:has(.mini) { padding: 8px 10px; }
+    ha-card:has(.mini) { padding: 12px; }
     .mini { display: flex; align-items: center; gap: 10px; }
-    .mini .logo { width: 32px; height: 32px; }
+    /* Top-aligned: 12 px from the card's top edge (the two lines are taller than the logo). */
+    .mini .logo { width: 32px; height: 32px; align-self: flex-start; }
     .body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
     .head { display: flex; align-items: center; gap: 8px; min-width: 0; }
     .mini .name { flex: 0 1 auto; }
@@ -545,7 +552,7 @@ class ZoraxyMiniCard extends ZoraxyCard {
     .zoom .icon { width: 16px; height: 16px; }
     .zoom:hover { background: color-mix(in srgb, var(--secondary-text-color) 16%, transparent); color: var(--primary-text-color); }
     .zoom:focus-visible { outline: 2px solid var(--zx-accent); outline-offset: 1px; }
-    .header .zoom { align-self: flex-start; margin: -6px -6px 0 0; }
+    .header .zoom { align-self: flex-start; margin: -4px -4px 0 0; }
   `;
 
   static getConfigElement() { return document.createElement("zoraxy-mini-card-editor"); }

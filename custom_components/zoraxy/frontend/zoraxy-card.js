@@ -91,7 +91,7 @@ class ZoraxyCard extends HTMLElement {
     .chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 12px; font-size: 11px; font-weight: 500;
             background: color-mix(in srgb, var(--c, var(--zx-ok)) 15%, transparent); color: var(--c, var(--zx-ok)); white-space: nowrap; }
     .header { display: flex; align-items: center; gap: 10px; padding: 12px 12px 4px; }
-    .logo { width: 36px; height: 36px; flex: none; }
+    .logo { width: 40px; height: 40px; flex: none; }
     .titles { flex: 1; min-width: 0; }
     .name { font-size: 16px; font-weight: 500; line-height: 1.25; color: var(--primary-text-color); text-decoration: none;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }

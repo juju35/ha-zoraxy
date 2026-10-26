@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Changes
+- Full card: the Zoraxy logo in the header is 40 px, like the header icon of the other cards (32 px on the mini card, unchanged).
+
 ## 1.7.1
 
 ### Fixes

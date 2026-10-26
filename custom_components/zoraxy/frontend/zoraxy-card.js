@@ -300,7 +300,9 @@ class ZoraxyCard extends HTMLElement {
 
   _daysUntil(dateStr) {
     if (!dateStr || dateStr === "unavailable" || dateStr === "unknown") return null;
-    try { return Math.floor((new Date(dateStr) - Date.now()) / 86400000); } catch { return null; }
+    // new Date("garbage") gives an Invalid Date, not an exception: NaN would show as "J-NaN" with a green pill.
+    const days = Math.floor((new Date(dateStr) - Date.now()) / 86400000);
+    return Number.isNaN(days) ? null : days;
   }
 
   _mdi(path) {

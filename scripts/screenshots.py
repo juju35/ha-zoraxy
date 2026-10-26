@@ -1,7 +1,8 @@
 """Render the Zoraxy card and mini card with mock entities and save the README screenshots.
 
 Usage: python scripts/screenshots.py  (needs `pip install playwright` and `playwright install chromium`)
-The clock is frozen so certificate countdowns stay the same.
+The clock is frozen so certificate countdowns stay the same. Every shot is in English, with 16 px of
+theme background around the card (full card 460 px wide, mini card 380 px, 460 px zoomed in).
 """
 
 import os
@@ -12,13 +13,14 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parent.parent
 CARD_JS = (ROOT / "custom_components/zoraxy/frontend/zoraxy-card.js").read_text()
 NOW = "2026-10-20T08:30:00+02:00"
-WIDTH = 410
+WIDTH = 460  # full card, and the mini card zoomed in
+MINI_WIDTH = 380
 P = "zoraxy_reverse_proxy_zoraxy"
 
 THEMES = {
     "light": {
         "--primary-background-color": "#e8eaed",
-        "--secondary-background-color": "#f2f2f2",
+        "--secondary-background-color": "#ececec",
         "--card-background-color": "#ffffff",
         "--primary-text-color": "#212121",
         "--secondary-text-color": "#727272",
@@ -84,22 +86,22 @@ STATES = dict(
 )
 
 SHOTS = [
-    {"file": "card", "theme": "light", "lang": "en", "open": ["certs"]},
-    {"file": "card-dark", "theme": "dark", "lang": "en", "open": ["rules"]},
+    {"file": "card", "theme": "light", "open": ["certs"]},
+    {"file": "card-dark", "theme": "dark", "open": ["rules"]},
     # The mini card, and the same card zoomed in (its detail button clicked).
-    {"file": "mini", "theme": "light", "lang": "en", "tag": "zoraxy-mini-card"},
-    {"file": "mini-dark", "theme": "dark", "lang": "en", "tag": "zoraxy-mini-card"},
-    {"file": "mini-zoom", "theme": "light", "lang": "en", "tag": "zoraxy-mini-card", "zoom": True},
-    {"file": "mini-zoom-dark", "theme": "dark", "lang": "en", "tag": "zoraxy-mini-card", "zoom": True},
+    {"file": "mini", "theme": "light", "tag": "zoraxy-mini-card", "width": MINI_WIDTH},
+    {"file": "mini-dark", "theme": "dark", "tag": "zoraxy-mini-card", "width": MINI_WIDTH},
+    {"file": "mini-zoom", "theme": "light", "tag": "zoraxy-mini-card", "zoom": True},
+    {"file": "mini-zoom-dark", "theme": "dark", "tag": "zoraxy-mini-card", "zoom": True},
 ]
 
 
-def page_html(theme):
+def page_html(theme, width):
     variables = "".join(f"{k}:{v};" for k, v in {**THEMES[theme], **COMMON}.items())
     return f"""<!doctype html><html><head><meta charset="utf-8"><style>
   :root {{ {variables} }}
   body {{ margin: 0; padding: 16px; background: var(--primary-background-color); color: var(--primary-text-color);
-         font-family: Roboto, "Segoe UI", Helvetica, Arial, sans-serif; width: {WIDTH}px; }}
+         font-family: Roboto, "Segoe UI", Helvetica, Arial, sans-serif; width: {width}px; }}
 </style></head><body><div id="root"></div></body></html>"""
 
 
@@ -119,14 +121,15 @@ def main():
             page = context.new_page()
             page.on("pageerror", lambda err: print(f"page error: {err}"))
             page.clock.set_fixed_time(NOW)
-            page.set_content(page_html(shot["theme"]))
+            width = shot.get("width", WIDTH)
+            page.set_content(page_html(shot["theme"], width))
             page.add_script_tag(content=HA_CARD)
             page.add_script_tag(content=CARD_JS)
             page.evaluate(
-                """({states, lang, open, tag, zoom}) => {
+                """({states, dark, open, tag, zoom}) => {
                   const el = document.createElement(tag);
                   el.setConfig({type: `custom:${tag}`, zoraxy_url: "https://proxy.example.org"});
-                  el.hass = {states, language: lang, locale: {language: lang}, callService: () => Promise.resolve()};
+                  el.hass = {states, language: "en", locale: {language: "en"}, themes: {darkMode: dark}, callService: () => Promise.resolve()};
                   document.getElementById("root").appendChild(el);
                   // A mouse click (detail: 1), so that no focus ring shows on the new button.
                   const click = (node) => node.dispatchEvent(new MouseEvent("click", {bubbles: true, composed: true, detail: 1}));
@@ -135,15 +138,19 @@ def main():
                 }""",
                 {
                     "states": STATES,
-                    "lang": shot["lang"],
+                    "dark": shot["theme"] == "dark",
                     "open": shot.get("open", []),
                     "tag": shot.get("tag", "zoraxy-card"),
                     "zoom": shot.get("zoom", False),
                 },
             )
             page.wait_for_timeout(300)
-            page.locator(shot.get("tag", "zoraxy-card")).screenshot(
-                path=str(out_dir / f"{shot['file']}.png"), animations="disabled"
+            # The card with 16 px of theme background around it
+            box = page.locator("#root").bounding_box()
+            page.screenshot(
+                path=str(out_dir / f"{shot['file']}.png"),
+                clip={"x": 0, "y": 0, "width": width + 32, "height": int(box["height"] + 0.999) + 32},
+                animations="disabled",
             )
             print(f"screenshots/{shot['file']}.png")
             page.close()

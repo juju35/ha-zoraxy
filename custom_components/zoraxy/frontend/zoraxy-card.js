@@ -530,7 +530,7 @@ class ZoraxyMiniCard extends ZoraxyCard {
     .mini .logo { width: 32px; height: 32px; }
     .body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
     .head { display: flex; align-items: center; gap: 8px; min-width: 0; }
-    .mini .name { flex: 0 1 auto; font-size: 14px; line-height: 18px; }
+    .mini .name { flex: 0 1 auto; }
     .head #status { flex: none; margin-left: auto; }
     .rs { display: flex; flex-wrap: wrap; gap: 2px 4px; margin-left: -4px; }
     .rs:empty { display: none; }

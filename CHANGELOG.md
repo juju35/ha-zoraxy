@@ -4,6 +4,7 @@
 
 ### Changes
 - Full card: the Zoraxy logo in the header is 40 px, like the header icon of the other cards (32 px on the mini card, unchanged).
+- Mini card: the title uses the full card's size (16 px, line height 1.25) instead of 14 px; a long title still ends with an ellipsis.
 
 ## 1.7.1
 

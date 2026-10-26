@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.9.0
+### Fixes
+- Card: a certificate sensor with an unparsable date no longer shows "D-NaN" with a green pill suggesting a healthy certificate. `new Date("...")` returns an *Invalid Date* instead of throwing, so the `try/catch` in `_daysUntil()` was unreachable and an unparsable value produced `NaN` (both `NaN < 7` and `NaN < 30` are false, giving the `ok` class). The method now returns `null` on an invalid date, the case already handled everywhere (a "?" label, a neutral `idle` pill, and exclusion from the mini card chips).
+
 ## 1.8.0
 ### Changes
 - Full card: the Zoraxy logo in the header is 40 px, like the header icon of the other cards (32 px on the mini card, unchanged).

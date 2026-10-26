@@ -1,4 +1,4 @@
-const ZORAXY_CARD_VERSION = '1.8.0';
+const ZORAXY_CARD_VERSION = '1.9.0';
 
 // Escapes a value interpolated into innerHTML, as text or inside a quoted attribute (as parcelEsc in ha-parcel).
 function zoraxyEsc(s) {
@@ -300,7 +300,9 @@ class ZoraxyCard extends HTMLElement {
 
   _daysUntil(dateStr) {
     if (!dateStr || dateStr === "unavailable" || dateStr === "unknown") return null;
-    try { return Math.floor((new Date(dateStr) - Date.now()) / 86400000); } catch { return null; }
+    // new Date("garbage") gives an Invalid Date, not an exception: NaN would show as "J-NaN" with a green pill.
+    const days = Math.floor((new Date(dateStr) - Date.now()) / 86400000);
+    return Number.isNaN(days) ? null : days;
   }
 
   _mdi(path) {

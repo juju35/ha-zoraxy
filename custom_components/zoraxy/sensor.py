@@ -39,7 +39,6 @@ class ZoraxyProxyRulesCountSensor(ZoraxyBaseSensor):
     _attr_translation_key = "proxy_rules"
     _legacy_name = "Zoraxy - Règles proxy"
     _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_native_unit_of_measurement = "règles"
 
     @property
     def unique_id(self):
@@ -75,7 +74,6 @@ class ZoraxyActiveRulesCountSensor(ZoraxyBaseSensor):
     _attr_translation_key = "active_rules"
     _legacy_name = "Zoraxy - Règles actives"
     _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_native_unit_of_measurement = "actives"
 
     @property
     def unique_id(self):
@@ -90,7 +88,6 @@ class ZoraxyCertCountSensor(ZoraxyBaseSensor):
     _attr_translation_key = "tls_certificates"
     _legacy_name = "Zoraxy - Certificats TLS"
     _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_native_unit_of_measurement = "certificats"
 
     @property
     def unique_id(self):
@@ -112,7 +109,6 @@ class ZoraxyAccessRulesCountSensor(ZoraxyBaseSensor):
     _attr_translation_key = "access_rules"
     _legacy_name = "Zoraxy - Règles d'accès"
     _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_native_unit_of_measurement = "règles"
 
     @property
     def unique_id(self):
@@ -133,7 +129,7 @@ class ZoraxyInboundPortSensor(ZoraxyBaseSensor):
 
     @property
     def native_value(self):
-        return self._status_option().get("Port", "?")
+        return self._status_option().get("Port")
 
 
 class ZoraxyCertExpirySensor(ZoraxyDomainEntity, ZoraxyBaseSensor):
@@ -154,7 +150,7 @@ class ZoraxyCertExpirySensor(ZoraxyDomainEntity, ZoraxyBaseSensor):
             return None
         try:
             return datetime.fromisoformat(expiry_str)
-        except ValueError:
+        except (ValueError, TypeError):
             return None
 
     @property

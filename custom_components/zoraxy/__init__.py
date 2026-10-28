@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import logging
+import time
 from datetime import timedelta
 from pathlib import Path
 from typing import Any
@@ -25,6 +26,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .api import ZoraxyAuthError, ZoraxyClient, ZoraxyError, normalize_host
 from .const import (
+    ACME_POLL_SECONDS,
     CONF_SCAN_INTERVAL,
     CONF_VERIFY_SSL,
     DEFAULT_SCAN_INTERVAL,
@@ -89,7 +91,10 @@ async def _async_register_card(hass: HomeAssistant) -> None:
     The file hash in the URL makes browsers fetch the new card after an update. The
     /local/ resource of versions up to 1.2.1 is replaced by the integration's URL.
     """
-    digest = await hass.async_add_executor_job(lambda: hashlib.md5(CARD_PATH.read_bytes()).hexdigest()[:8])
+    # Cache busting, not cryptography: usedforsecurity keeps FIPS-mode Pythons from rejecting md5.
+    digest = await hass.async_add_executor_job(
+        lambda: hashlib.md5(CARD_PATH.read_bytes(), usedforsecurity=False).hexdigest()[:8]
+    )
     base_url = f"{FRONTEND_URL}/{CARD_FILENAME}"
     url = f"{base_url}?v={digest}"
 
@@ -271,6 +276,7 @@ class ZoraxyDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.cert_list_loaded = False
         self._acme_email: str | None = None
         self._acme_ca: str = "Let's Encrypt"
+        self._acme_checked: float | None = None
 
     async def renew_certificate(self, domain: str) -> None:
         """Ask Zoraxy for a new ACME certificate. Raises HomeAssistantError on failure."""
@@ -325,15 +331,22 @@ class ZoraxyDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             proxy_status = await self.client.fetch_json("/api/proxy/status")
             if not isinstance(proxy_status, dict):
                 raise UpdateFailed("Unexpected proxy status from Zoraxy")
-            # type=root answers the root object alone (zsrc/rp.go), not a rule list: only host rules are listed.
-            host_rules, cert_list, redirect_list, access_rules, acme_email, acme_ca = await asyncio.gather(
+            # The ACME auto-renew settings only feed the renewal service and almost never change:
+            # they are read on the first refresh, then at most once an hour.
+            fetch_acme = self._acme_checked is None or time.monotonic() - self._acme_checked >= ACME_POLL_SECONDS
+            requests = [
                 self._optional("/api/proxy/list", method="POST", fields={"type": "host"}),
                 self._optional("/api/cert/list"),
                 self._optional("/api/redirect/list"),
                 self._optional("/api/access/list"),
-                self._optional("/api/acme/autoRenew/email"),
-                self._optional("/api/acme/autoRenew/ca"),
-            )
+            ]
+            if fetch_acme:
+                requests += [self._optional("/api/acme/autoRenew/email"), self._optional("/api/acme/autoRenew/ca")]
+            # type=root answers the root object alone (zsrc/rp.go), not a rule list: only host rules are listed.
+            host_rules, cert_list, redirect_list, access_rules, *acme = await asyncio.gather(*requests)
+            acme_email, acme_ca = acme or (None, None)
+            if fetch_acme:
+                self._acme_checked = time.monotonic()
         except ZoraxyAuthError as err:
             raise ConfigEntryAuthFailed(str(err)) from err
         except ZoraxyError as err:

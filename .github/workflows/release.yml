@@ -38,7 +38,8 @@ jobs:
       - name: Build zip and notes
         if: steps.version.outputs.exists == 'false'
         run: |
-          (cd custom_components/zoraxy && zip -r ../../zoraxy.zip . -x "__pycache__/*")
+          # AGENT.md is internal agent context: it has no business in what users install.
+          (cd custom_components/zoraxy && zip -r ../../zoraxy.zip . -x "__pycache__/*" "AGENT.md")
           .github/scripts/release-notes.sh "${{ steps.version.outputs.version }}" > notes.md
           test -s notes.md
 

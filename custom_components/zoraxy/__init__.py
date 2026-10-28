@@ -294,7 +294,7 @@ class ZoraxyDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         _LOGGER.info("Zoraxy: certificate %s renewed", domain)
 
     def _extract_cert_expiry(self, proxy_status: dict) -> dict[str, str]:
-        all_certs = (proxy_status.get("Option", {}) or {}).get("TlsManager", {}).get("LoadedCerts", [])
+        all_certs = ((proxy_status.get("Option") or {}).get("TlsManager") or {}).get("LoadedCerts") or []
         result, seen = {}, set()
         for c in all_certs:
             pk = c.get("PriKey", "")

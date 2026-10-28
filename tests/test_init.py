@@ -189,6 +189,23 @@ async def test_refused_password_starts_reauth(hass, aioclient_mock, entry):
     assert any(f["context"]["source"] == "reauth" for f in hass.config_entries.flow.async_progress())
 
 
+async def test_login_body_mentioning_error_is_not_a_refusal(hass, aioclient_mock, entry):
+    """Only a JSON {"error": ...} login body is a refusal, not any body containing the word "error"."""
+    aioclient_mock.post(f"{HOST}/api/auth/login", text="OK (0 errors)")
+    mock_zoraxy(aioclient_mock)
+    await _setup(hass, entry)
+    assert entry.state is ConfigEntryState.LOADED
+
+
+async def test_null_tls_manager_keeps_entities_available(hass, aioclient_mock, entry):
+    """A Zoraxy without TLS manager data ("TlsManager": null) must not fail the whole update."""
+    status = {"Option": {**PROXY_STATUS["Option"], "TlsManager": None}}
+    mock_zoraxy(aioclient_mock, status=status)
+    await _setup(hass, entry)
+    assert entry.state is ConfigEntryState.LOADED
+    assert hass.states.get(f"binary_sensor.{P}_proxy_actif").state == "on"
+
+
 async def test_status_failure_makes_entities_unavailable(hass, aioclient_mock, entry):
     """A failed status call fails the update instead of showing the proxy as stopped."""
     mock_zoraxy(aioclient_mock)
@@ -263,6 +280,17 @@ async def test_toggle_proxy_rule_without_enable_toggles(hass, aioclient_mock, en
     await _setup(hass, entry)
     await hass.services.async_call(DOMAIN, "toggle_proxy_rule", {"domain": "app.example.org"}, blocking=True)
     assert _calls(aioclient_mock, "/api/proxy/toggle")[0][2] == "ep=app.example.org&enable=false"
+
+
+async def test_toggle_proxy_rule_body_mentioning_error_is_not_a_failure(hass, aioclient_mock, entry):
+    """Only a JSON {"error": ...} body fails a command, not any body containing the word "error"."""
+    mock_zoraxy(aioclient_mock)
+    aioclient_mock.post(f"{HOST}/api/proxy/toggle", text="OK, no error")
+    await _setup(hass, entry)
+    await hass.services.async_call(
+        DOMAIN, "toggle_proxy_rule", {"domain": "app.example.org", "enable": True}, blocking=True
+    )
+    assert len(_calls(aioclient_mock, "/api/proxy/toggle")) == 1
 
 
 async def test_toggle_proxy_rule_unknown_domain(hass, aioclient_mock, entry):

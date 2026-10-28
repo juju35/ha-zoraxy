@@ -90,7 +90,11 @@ class ZoraxyClient:
         )
         if status >= 500:
             raise ZoraxyError(f"Zoraxy login failed (HTTP {status})")
-        if status != 200 or "error" in body.lower():
+        try:
+            data = json.loads(body)
+        except ValueError:
+            data = None
+        if status != 200 or (isinstance(data, dict) and data.get("error")):
             _LOGGER.debug("Zoraxy: login refused (HTTP %s): %s", status, body[:200])
             raise ZoraxyAuthError(f"Zoraxy refused the login (HTTP {status})")
 
@@ -159,5 +163,3 @@ class ZoraxyClient:
             data = None
         if isinstance(data, dict) and data.get("error"):
             raise ZoraxyError(str(data["error"]))
-        if not isinstance(data, dict) and "error" in body.lower():
-            raise ZoraxyError(body[:200])

@@ -335,13 +335,17 @@ class ZoraxyCard extends HTMLElement {
     return rules.map((r) => {
       const target = zoraxyEsc(r.target);
       const domain = zoraxyEsc(r.domain);
+      // A wildcard rule (*.example.org) is not a valid URL: plain label, no link.
+      const left = String(r.domain ?? "").includes("*")
+        ? `<span class="row-label">${domain}</span>`
+        : `<span class="row-label domain-link" role="link" tabindex="0" data-href="https://${domain}">${domain}</span>`;
       const right = `<span class="row-sub" title="${target}">${target}</span>
         <button class="icon-btn rule-btn ${r.enabled ? "ok" : "crit"}"
           data-rule-domain="${domain}"
           data-rule-enabled="${r.enabled ? "true" : "false"}"
           title="${r.enabled ? this._t("disableRule") : this._t("enableRule")}">${this._ruleBtnContent(r.enabled)}</button>`;
       return `<div class="row">
-        <div class="row-left"><span class="row-label domain-link" role="link" tabindex="0" data-href="https://${domain}">${domain}</span></div>
+        <div class="row-left">${left}</div>
         <div class="row-right">${right}</div>
       </div>`;
     }).join("");
@@ -607,7 +611,7 @@ class ZoraxyMiniCard extends ZoraxyCard {
     // Certificates expiring within 30 days get a chip each, the closest first; otherwise one chip with their count.
     const expiring = this._certSensors(p)
       .filter(({ suffix, days }) => (days !== null && days < 30) || this._isOn(`${bp}_cert_expirant_${suffix}`))
-      .sort((a, b) => (a.days ?? 0) - (b.days ?? 0));
+      .sort((a, b) => (a.days ?? Infinity) - (b.days ?? Infinity));
     for (const { id, suffix, days } of expiring) {
       const domain = this._attr(id, "domain") || suffix.replace(/_/g, ".");
       const cls = days !== null && days < 7 ? "crit" : "warn";

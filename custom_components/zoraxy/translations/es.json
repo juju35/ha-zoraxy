@@ -1,0 +1,107 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Zoraxy - Configuración",
+        "data": {
+          "host": "Dirección de Zoraxy (URL con puerto)",
+          "username": "Nombre de usuario",
+          "password": "Contraseña",
+          "scan_interval": "Intervalo de actualización (segundos)",
+          "verify_ssl": "Verificar el certificado TLS"
+        },
+        "data_description": {
+          "verify_ssl": "Desactívalo solo para una dirección HTTPS con un certificado autofirmado."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Zoraxy - Nueva contraseña",
+        "description": "Zoraxy rechazó la contraseña de {username} en {host}.",
+        "data": {
+          "password": "Contraseña"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "No se puede conectar a Zoraxy",
+      "invalid_auth": "Credenciales no válidas",
+      "unknown": "Error desconocido"
+    },
+    "abort": {
+      "already_configured": "Zoraxy ya está configurado",
+      "reauth_successful": "Contraseña actualizada"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Zoraxy - Opciones",
+        "data": {
+          "scan_interval": "Intervalo de actualización (segundos)",
+          "verify_ssl": "Verificar el certificado TLS"
+        },
+        "data_description": {
+          "verify_ssl": "Desactívalo solo para una dirección HTTPS con un certificado autofirmado."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "proxy_rules": {
+        "name": "Reglas de proxy"
+      },
+      "active_rules": {
+        "name": "Reglas activas"
+      },
+      "tls_certificates": {
+        "name": "Certificados TLS"
+      },
+      "access_rules": {
+        "name": "Reglas de acceso"
+      },
+      "inbound_port": {
+        "name": "Puerto de entrada"
+      },
+      "certificate": {
+        "name": "Certificado {domain}"
+      }
+    },
+    "binary_sensor": {
+      "proxy_running": {
+        "name": "Proxy en ejecución"
+      },
+      "tls_enabled": {
+        "name": "TLS activado"
+      },
+      "https_redirect": {
+        "name": "Redirección HTTPS"
+      },
+      "port_80": {
+        "name": "Escucha en el puerto 80"
+      },
+      "development_mode": {
+        "name": "Modo de desarrollo"
+      },
+      "certificate_expiring": {
+        "name": "Certificado {domain} a punto de caducar"
+      }
+    },
+    "switch": {
+      "https_redirect": {
+        "name": "Redirección HTTPS"
+      },
+      "port_80": {
+        "name": "Escucha en el puerto 80"
+      },
+      "development_mode": {
+        "name": "Modo de desarrollo"
+      }
+    },
+    "button": {
+      "renew": {
+        "name": "Renovar {domain}"
+      }
+    }
+  }
+}

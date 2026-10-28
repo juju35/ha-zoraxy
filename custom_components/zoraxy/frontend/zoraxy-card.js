@@ -74,6 +74,40 @@ class ZoraxyCard extends HTMLElement {
       ruleCount: "{a}/{n} rules", certCount: "{n} certs",
       ed_zoom: "Detail button", ed_zoom_helper: "Switches to the full card and back",
     },
+    de: {
+      active: "Aktiv", inactive: "Inaktiv",
+      rules: "Regeln", activeRules: "Aktiv", certs: "Zert.", port: "Port",
+      controls: "Steuerung", httpsRedirect: "HTTPS-Umleitung", port80: "Port 80", devMode: "Dev-Modus",
+      certsSection: "Zertifikate", proxyRules: "Proxy-Regeln", redirections: "Weiterleitungen",
+      noCerts: "Kein Zertifikat gefunden.", noRules: "Keine Regel konfiguriert.", noRedirects: "Keine Weiterleitung konfiguriert.",
+      expired: "Abgelaufen", renew: "Erneuern", daysLeft: "{n} T",
+      domain: "Domain", target: "Ziel", status: "Status",
+      on: "An", off: "Aus",
+      enableRule: "Aktivieren", disableRule: "Deaktivieren",
+      ed_zoraxy_url: "Zoraxy-URL", ed_entity_prefix: "Entitätspräfix",
+      ed_zoraxy_url_helper: "Wird beim Klick auf den Kartentitel geöffnet",
+      ed_entity_prefix_helper: "Gemeinsamer Teil der Entitäts-IDs, zum Beispiel zoraxy_reverse_proxy_zoraxy",
+      zoomIn: "Vollständige Karte anzeigen", zoomOut: "Zurück zur kompakten Ansicht",
+      ruleCount: "{a}/{n} Regeln", certCount: "{n} Zert.",
+      ed_zoom: "Detail-Schaltfläche", ed_zoom_helper: "Wechselt zur vollständigen Karte und zurück",
+    },
+    es: {
+      active: "Activo", inactive: "Inactivo",
+      rules: "Reglas", activeRules: "Activas", certs: "Cert.", port: "Puerto",
+      controls: "Controles", httpsRedirect: "Redirección HTTPS", port80: "Puerto 80", devMode: "Modo dev",
+      certsSection: "Certificados", proxyRules: "Reglas de proxy", redirections: "Redirecciones",
+      noCerts: "No se encontró ningún certificado.", noRules: "Ninguna regla configurada.", noRedirects: "Ninguna redirección configurada.",
+      expired: "Caducado", renew: "Renovar", daysLeft: "{n} d",
+      domain: "Dominio", target: "Destino", status: "Estado",
+      on: "Encendido", off: "Apagado",
+      enableRule: "Activar", disableRule: "Desactivar",
+      ed_zoraxy_url: "URL de Zoraxy", ed_entity_prefix: "Prefijo de las entidades",
+      ed_zoraxy_url_helper: "Se abre al hacer clic en el título de la tarjeta",
+      ed_entity_prefix_helper: "Parte común de los ID de entidad, por ejemplo zoraxy_reverse_proxy_zoraxy",
+      zoomIn: "Mostrar la tarjeta completa", zoomOut: "Volver a la vista compacta",
+      ruleCount: "{a}/{n} reglas", certCount: "{n} cert.",
+      ed_zoom: "Botón de detalle", ed_zoom_helper: "Cambia a la tarjeta completa y vuelve",
+    },
   };
 
   static CSS = `
@@ -232,8 +266,13 @@ class ZoraxyCard extends HTMLElement {
 
 
   _lang() {
-    const lang = this._hass?.locale?.language || navigator.language || "en";
-    return lang.toLowerCase().startsWith("fr") ? "fr" : "en";
+    return ZoraxyCard.langOf(this._hass?.locale?.language || navigator.language);
+  }
+
+  // The supported language matching a locale ("de-AT" → "de"), English otherwise.
+  static langOf(locale) {
+    const lang = String(locale || "en").toLowerCase().slice(0, 2);
+    return Object.hasOwn(ZoraxyCard.I18N, lang) ? lang : "en";
   }
 
   _t(key) { return ZoraxyCard.I18N[this._lang()]?.[key] ?? ZoraxyCard.I18N.en[key] ?? key; }
@@ -704,7 +743,7 @@ class ZoraxyCardEditor extends HTMLElement {
   _render() {
     if (!this._hass || !this._config) return;
     if (!this._form) {
-      const lang = (this._hass.locale?.language || this._hass.language || "en").toLowerCase().startsWith("fr") ? "fr" : "en";
+      const lang = ZoraxyCard.langOf(this._hass.locale?.language || this._hass.language);
       const t = (key) => ZoraxyCard.I18N[lang][key];
       this._form = document.createElement("ha-form");
       this._form.schema = this.constructor.SCHEMA;

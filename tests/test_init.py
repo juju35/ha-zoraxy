@@ -498,6 +498,25 @@ async def test_polling_skips_root_rule_request(hass, aioclient_mock, entry):
     assert hass.states.get(f"sensor.{P}_regles_proxy").state == "1"
 
 
+async def test_acme_settings_polled_hourly(hass, aioclient_mock, entry):
+    """The ACME auto-renew settings only feed the renewal service: read once, then at most hourly."""
+    mock_zoraxy(aioclient_mock)
+    await _setup(hass, entry)
+    coordinator = entry.runtime_data
+    assert len(_calls(aioclient_mock, "/api/acme/autoRenew/email", method="get")) == 1
+
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+    assert len(_calls(aioclient_mock, "/api/acme/autoRenew/email", method="get")) == 1
+    # The settings read at the first refresh still feed the renewal service.
+    assert coordinator._acme_email == "me@example.org"
+
+    coordinator._acme_checked -= 3601  # an hour later
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+    assert len(_calls(aioclient_mock, "/api/acme/autoRenew/email", method="get")) == 2
+
+
 async def test_migration_keeps_tls_unchecked(hass, aioclient_mock):
     """Entries from 1.5.0 and earlier never checked the certificate: they keep verify_ssl off."""
     old = {"host": f"{HOST}/", "username": "admin", "password": "secret", "scan_interval": 30}

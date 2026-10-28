@@ -43,7 +43,7 @@ Zoraxy v3.3.2 uses **gorilla/csrf** protection. Login flow:
 **Session expiry detection** (Zoraxy returns 307 → /login.html, not 401):
 - Check if response URL contains `"login"` after redirects
 - Check if response Content-Type is `text/html` instead of JSON
-- On expiry: recreate session + re-login, retry once (`_retry=False` guard)
+- On expiry: re-login under a lock and retry once (a generation counter tells waiting calls that a fresh session already exists)
 
 ## Key Classes
 
@@ -81,7 +81,7 @@ Zoraxy v3.3.2 uses **gorilla/csrf** protection. Login flow:
 | `/api/acme/obtainCert` | GET | Trigger ACME renewal (params: domains, filename, email, ca, dns) |
 | `/api/proxy/useHttpsRedirect` | POST | Toggle HTTPS redirect |
 | `/api/proxy/listenPort80` | POST | Toggle port 80 listener |
-| `/api/proxy/developmentMode` | POST | Toggle dev/no-cache mode |
+| `/api/proxy/developmentMode` | GET | Toggle dev/no-cache mode (`GetBool(r, "enable")` reads the query string only) |
 
 ## Entity Patterns
 
@@ -110,7 +110,7 @@ Web component `<zoraxy-card>`. Key design decisions:
 - **Section state**: `_sectionOpen` dict persists open/closed state across renders
 - **Entity prefix**: `entity_prefix` option, default `zoraxy_reverse_proxy_zoraxy`
 - **I18N**: `static I18N = {fr: {...}, en: {...}}` + `_t(key)` via `hass.locale.language`
-- **Static assets**: `ICONS`, `LOGO`, `BADGE_COLORS`, `CSS` are static class properties (created once)
+- **Static assets**: `ICONS`, `LOGO`, `CSS` are static class properties (created once)
 
 Web component `<zoraxy-mini-card>` (same file): `ZoraxyMiniCard extends ZoraxyCard`, two lines (logo, name, status pill; chips from `_miniChips()`). `_zoomed` switches `_render()` to the full card's `super._render()`; `_addZoom()` appends the detail button to `.head` / `.header` after each render (`zoom: false`: none). A capture-phase document click outside the card and outside any `ha-more-info-dialog` / `ha-dialog` / `dialog` unzooms it. Its editor `ZoraxyMiniCardEditor` extends the full card's editor (`SCHEMA` + `zoom`, `DEFAULTS`).
 
@@ -124,7 +124,7 @@ zoraxy_url: http://zoraxy.local:8000
 ## Known Behaviors & Quirks
 
 - Zoraxy session TTL is ~1 hour — reconnection is automatic
-- `/api/proxy/list` requires `type` param (`host` or `root`); both are fetched and merged
+- `/api/proxy/list` requires a `type` param; only `type=host` is polled (`type=root` returns the root object alone)
 - `/api/acme/obtainCert` is a GET (not POST) despite being a mutation
 - All POST API calls require `X-CSRF-Token` header (same token as login)
 - `CookieJar(unsafe=True)` is mandatory for local IP addresses

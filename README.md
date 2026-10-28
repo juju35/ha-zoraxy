@@ -87,6 +87,8 @@ zoraxy_url: http://zoraxy.local:8000
 | `zoraxy_url` | — | Zoraxy web interface (`http://` or `https://`), opened from the card title and shown under it |
 | `entity_prefix` | `zoraxy_reverse_proxy_zoraxy` | Common part of the entity ids |
 
+With two Zoraxy instances, the second one's entities get `_2`-suffixed ids (`…_regles_proxy_2`) that the card cannot tell apart from the first instance's. Rename that instance's entity ids to their own prefix (for example `zoraxy_b_regles_proxy`, in **Settings → Devices & services → Entities**) and set `entity_prefix: zoraxy_b` on its card.
+
 ### Mini card
 
 `custom:zoraxy-mini-card` shows the full card's essentials on two lines, for a compact dashboard: the logo, title and status pill, then a chip per key figure:

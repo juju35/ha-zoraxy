@@ -77,7 +77,7 @@ test('card version is the manifest version', () => {
 
 test('I18N locales all carry the same keys', () => {
   const langs = Object.keys(ZoraxyCard.I18N);
-  assert.ok(langs.includes('fr') && langs.includes('en'));
+  for (const lang of ['en', 'fr', 'de', 'es']) assert.ok(langs.includes(lang), `missing ${lang}`);
   const reference = Object.keys(ZoraxyCard.I18N.en).sort();
   for (const lang of langs) {
     assert.deepEqual(Object.keys(ZoraxyCard.I18N[lang]).sort(), reference, `keys of ${lang}`);
@@ -86,11 +86,15 @@ test('I18N locales all carry the same keys', () => {
 
 test('_t falls back to English, then to the key', () => {
   const card = makeCard();
-  card._hass.locale.language = 'de';
+  card._hass.locale.language = 'ja';
   assert.equal(card._t('rules'), ZoraxyCard.I18N.en.rules);
   assert.equal(card._t('no_such_key'), 'no_such_key');
   card._hass.locale.language = 'fr-CA';
   assert.equal(card._t('rules'), ZoraxyCard.I18N.fr.rules);
+  card._hass.locale.language = 'de-AT';
+  assert.equal(card._t('rules'), ZoraxyCard.I18N.de.rules);
+  card._hass.locale.language = 'es-419';
+  assert.equal(card._t('rules'), ZoraxyCard.I18N.es.rules);
 });
 
 test('setConfig validates the option types', () => {

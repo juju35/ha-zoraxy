@@ -1,0 +1,107 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Zoraxy - Konfiguration",
+        "data": {
+          "host": "Zoraxy-Adresse (URL mit Port)",
+          "username": "Benutzername",
+          "password": "Passwort",
+          "scan_interval": "Aktualisierungsintervall (Sekunden)",
+          "verify_ssl": "TLS-Zertifikat überprüfen"
+        },
+        "data_description": {
+          "verify_ssl": "Nur für eine HTTPS-Adresse mit selbstsigniertem Zertifikat deaktivieren."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Zoraxy - Neues Passwort",
+        "description": "Zoraxy hat das Passwort von {username} auf {host} abgelehnt.",
+        "data": {
+          "password": "Passwort"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung zu Zoraxy nicht möglich",
+      "invalid_auth": "Ungültige Anmeldedaten",
+      "unknown": "Unbekannter Fehler"
+    },
+    "abort": {
+      "already_configured": "Zoraxy ist bereits konfiguriert",
+      "reauth_successful": "Passwort aktualisiert"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Zoraxy - Optionen",
+        "data": {
+          "scan_interval": "Aktualisierungsintervall (Sekunden)",
+          "verify_ssl": "TLS-Zertifikat überprüfen"
+        },
+        "data_description": {
+          "verify_ssl": "Nur für eine HTTPS-Adresse mit selbstsigniertem Zertifikat deaktivieren."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "proxy_rules": {
+        "name": "Proxy-Regeln"
+      },
+      "active_rules": {
+        "name": "Aktive Regeln"
+      },
+      "tls_certificates": {
+        "name": "TLS-Zertifikate"
+      },
+      "access_rules": {
+        "name": "Zugriffsregeln"
+      },
+      "inbound_port": {
+        "name": "Eingangsport"
+      },
+      "certificate": {
+        "name": "Zertifikat {domain}"
+      }
+    },
+    "binary_sensor": {
+      "proxy_running": {
+        "name": "Proxy läuft"
+      },
+      "tls_enabled": {
+        "name": "TLS aktiviert"
+      },
+      "https_redirect": {
+        "name": "HTTPS-Umleitung"
+      },
+      "port_80": {
+        "name": "Listener auf Port 80"
+      },
+      "development_mode": {
+        "name": "Entwicklermodus"
+      },
+      "certificate_expiring": {
+        "name": "Zertifikat {domain} läuft ab"
+      }
+    },
+    "switch": {
+      "https_redirect": {
+        "name": "HTTPS-Umleitung"
+      },
+      "port_80": {
+        "name": "Listener auf Port 80"
+      },
+      "development_mode": {
+        "name": "Entwicklermodus"
+      }
+    },
+    "button": {
+      "renew": {
+        "name": "{domain} erneuern"
+      }
+    }
+  }
+}

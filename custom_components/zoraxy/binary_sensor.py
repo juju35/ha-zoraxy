@@ -123,8 +123,9 @@ class ZoraxyCertExpiringBinarySensor(ZoraxyDomainEntity, ZoraxyBaseBinarySensor)
             return None
         try:
             expiry = datetime.fromisoformat(expiry_str)
+            # TypeError: a naive NotAfter can't be compared with an aware now().
             return expiry < datetime.now(UTC) + timedelta(days=EXPIRY_WARNING_DAYS)
-        except ValueError:
+        except (ValueError, TypeError):
             return None
 
     @property

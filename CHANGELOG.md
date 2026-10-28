@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.10.0
+### What's new
+- German and Spanish translations: the configuration and options flows, the entity names, and both cards (full and mini, with their visual editors) follow Home Assistant in `de` and `es`, in addition to English and French. Any other language still falls back to English.
+
 ## 1.9.1
 ### Fixes
 - The integration no longer becomes unavailable when Zoraxy reports no TLS manager (`"TlsManager": null` in its status): the certificate entities fall back to no certificate.

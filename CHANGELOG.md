@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.10.1
+### Fixes
+- Card (Spanish): the on/off labels of the rule buttons and mini card chips are back to the short `On` / `Off`, so they keep their width.
+
 ## 1.10.0
 ### What's new
 - German and Spanish translations: the configuration and options flows, the entity names, and both cards (full and mini, with their visual editors) follow Home Assistant in `de` and `es`, in addition to English and French. Any other language still falls back to English.

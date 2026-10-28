@@ -1,4 +1,4 @@
-const ZORAXY_CARD_VERSION = '1.10.0';
+const ZORAXY_CARD_VERSION = '1.10.1';
 
 // Escapes a value interpolated into innerHTML, as text or inside a quoted attribute (as parcelEsc in ha-parcel).
 function zoraxyEsc(s) {
@@ -99,7 +99,7 @@ class ZoraxyCard extends HTMLElement {
       noCerts: "No se encontró ningún certificado.", noRules: "Ninguna regla configurada.", noRedirects: "Ninguna redirección configurada.",
       expired: "Caducado", renew: "Renovar", daysLeft: "{n} d",
       domain: "Dominio", target: "Destino", status: "Estado",
-      on: "Encendido", off: "Apagado",
+      on: "On", off: "Off",
       enableRule: "Activar", disableRule: "Desactivar",
       ed_zoraxy_url: "URL de Zoraxy", ed_entity_prefix: "Prefijo de las entidades",
       ed_zoraxy_url_helper: "Se abre al hacer clic en el título de la tarjeta",

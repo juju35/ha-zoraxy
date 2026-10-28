@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.9.1
+### Fixes
+- The integration no longer becomes unavailable when Zoraxy reports no TLS manager (`"TlsManager": null` in its status): the certificate entities fall back to no certificate.
+- A login or command response that merely contains the word "error" is no longer treated as a failure (no more spurious re-authentication); only a JSON object with an `error` key counts.
+- Certificate entities no longer fail on an expiry date without a time zone.
+- The count sensors no longer carry French units (`règles`, `actives`, `certificats`), and the inbound port sensor is unknown instead of `?` when the port cannot be read.
+- Card: wildcard rule domains (`*.example.org`) are no longer clickable links; on the mini card, a certificate with an unknown expiry is listed last instead of as expiring today.
+- The integration loads on Python builds in FIPS mode.
+
+### Performance
+- The ACME auto-renew settings are read on the first refresh, then at most hourly instead of at every update (2 requests saved per cycle).
+
+### Maintenance
+- README: how to point a card at a second Zoraxy instance (`entity_prefix`).
+- Card tests (`node --test`), daily validation, a screenshots workflow; the release zip excludes `AGENT.md`.
+
 ## 1.9.0
 ### Fixes
 - Card: a certificate sensor with an unparsable date no longer shows "D-NaN" with a green pill suggesting a healthy certificate. `new Date("...")` returns an *Invalid Date* instead of throwing, so the `try/catch` in `_daysUntil()` was unreachable and an unparsable value produced `NaN` (both `NaN < 7` and `NaN < 30` are false, giving the `ok` class). The method now returns `null` on an invalid date, the case already handled everywhere (a "?" label, a neutral `idle` pill, and exclusion from the mini card chips).

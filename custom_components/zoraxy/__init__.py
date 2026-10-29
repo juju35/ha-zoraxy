@@ -316,7 +316,8 @@ class ZoraxyDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     def _extract_cert_expiry(self, proxy_status: dict) -> dict[str, str]:
         all_certs = ((proxy_status.get("Option") or {}).get("TlsManager") or {}).get("LoadedCerts") or []
-        result, seen = {}, set()
+        names: list[tuple[list[str], str]] = []
+        seen: set[str] = set()
         for c in all_certs:
             if not isinstance(c, dict):
                 continue
@@ -327,12 +328,17 @@ class ZoraxyDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             cert = c.get("Cert")
             if not isinstance(cert, dict):
                 continue
-            dns = cert.get("DNSNames") or []
+            dns = [name for name in cert.get("DNSNames") or [] if isinstance(name, str)]
             if dns and (expiry := cert.get("NotAfter", "")):
-                # Every name of the certificate: the file listed by /api/cert/list may be named after any of its SANs.
-                for name in dns:
-                    if isinstance(name, str):
-                        result.setdefault(name, expiry)
+                names.append((dns, expiry))
+        # The main name of each certificate first, so that a certificate of its own always wins...
+        result: dict[str, str] = {}
+        for dns, expiry in names:
+            result[dns[0]] = expiry
+        # ...then the other SANs: the file listed by /api/cert/list may be named after any of them.
+        for dns, expiry in names:
+            for name in dns[1:]:
+                result.setdefault(name, expiry)
         return result
 
     def _store_acme(self, acme_email: Any, acme_ca: Any) -> bool:

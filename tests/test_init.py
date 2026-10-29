@@ -651,6 +651,26 @@ async def test_null_option_keeps_entities_working(hass, aioclient_mock, entry):
     assert hass.states.get(f"switch.{P}_ecoute_port_80").state == "off"
 
 
+@pytest.mark.parametrize(
+    ("running", "expected"),
+    [
+        # "Stop service" in Zoraxy sets Router.Running to false but keeps Option filled.
+        (False, "off"),
+        (True, "on"),
+        # A Zoraxy without the Running field falls back to the presence of Option.
+        (None, "on"),
+    ],
+)
+async def test_proxy_running_follows_router_running(hass, aioclient_mock, entry, running, expected):
+    """binary_sensor proxy_actif reads /api/proxy/status Running, not only whether Option is filled."""
+    status = dict(PROXY_STATUS) if running is None else {**PROXY_STATUS, "Running": running}
+    mock_zoraxy(aioclient_mock, status=status)
+    await _setup(hass, entry)
+    assert hass.states.get(f"binary_sensor.{P}_proxy_actif").state == expected
+    # The other binary sensors still read Option.
+    assert hass.states.get(f"binary_sensor.{P}_tls_active").state == "on"
+
+
 async def test_expiry_found_by_any_san(hass, aioclient_mock, entry):
     """A certificate file named after its second SAN still gets its expiry date."""
     cert = {"DNSNames": ["example.org", "www.example.org"], "NotAfter": "2099-01-01T00:00:00Z"}

@@ -53,7 +53,13 @@ class ZoraxyProxyRunningBinarySensor(ZoraxyBaseBinarySensor):
 
     @property
     def is_on(self):
-        return bool(self._option())
+        # /api/proxy/status serialises the whole Router: Running goes false on "Stop service"
+        # while Option stays filled. Option only decides when Running is missing.
+        status = self._data().get("proxy_status")
+        if not isinstance(status, dict):
+            return False
+        running = status.get("Running")
+        return running if isinstance(running, bool) else bool(self._option())
 
 
 class ZoraxyTLSEnabledBinarySensor(ZoraxyBaseBinarySensor):

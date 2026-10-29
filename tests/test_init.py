@@ -661,6 +661,19 @@ async def test_expiry_found_by_any_san(hass, aioclient_mock, entry):
     assert hass.states.get(f"binary_sensor.{P}_cert_expirant_www_example_org").state == "off"
 
 
+@pytest.mark.parametrize("reverse", [False, True])
+async def test_expiry_prefers_the_certificate_named_after_the_domain(hass, aioclient_mock, entry, reverse):
+    """A name covered as a secondary SAN by another certificate keeps the expiry of its own certificate."""
+    apex = {"DNSNames": ["example.org", "www.example.org"], "NotAfter": "2099-01-01T00:00:00Z"}
+    www = {"DNSNames": ["www.example.org"], "NotAfter": "2030-01-01T00:00:00Z"}
+    loaded = [{"PriKey": "apex.key", "Cert": apex}, {"PriKey": "www.key", "Cert": www}]
+    status = {"Option": {**PROXY_STATUS["Option"], "TlsManager": {"LoadedCerts": loaded[::-1] if reverse else loaded}}}
+    mock_zoraxy(aioclient_mock, status=status, certs=["example.org", "www.example.org"])
+    await _setup(hass, entry)
+    assert hass.states.get(f"sensor.{P}_cert_example_org").state == "2099-01-01T00:00:00+00:00"
+    assert hass.states.get(f"sensor.{P}_cert_www_example_org").state == "2030-01-01T00:00:00+00:00"
+
+
 async def test_new_certificate_gets_entities_without_reload(hass, aioclient_mock, entry):
     """A certificate added in Zoraxy gets its sensor, binary sensor and renew button at the next update."""
     mock_zoraxy(aioclient_mock)

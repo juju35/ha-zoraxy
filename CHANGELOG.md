@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.11.3
+### Fixes
+- A wildcard certificate (`*.example.org`, which Zoraxy lists as `_.example.org`) now shows its expiry date, so its expiring alert works; certificates imported under a name that is not one of their domains get their expiry date too.
+- The renew button of a wildcard certificate now explains that it needs a DNS challenge and must be renewed in Zoraxy, instead of sending a renewal that cannot succeed.
+
 ## 1.11.2
 ### Fixes
 - The *Proxy running* binary sensor (and the status chip of both cards) turns off when the proxy service is stopped in Zoraxy; it used to stay on as long as Zoraxy answered.

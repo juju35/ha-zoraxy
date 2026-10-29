@@ -12,6 +12,8 @@ on:
 # back onto the pull request's own branch, so they land through the normal merge.
 permissions:
   contents: write
+  # Lets the job re-dispatch the checks on its own screenshot commit (see below).
+  actions: write
 
 concurrency:
   group: screenshots-${{ github.head_ref || github.ref_name }}
@@ -68,8 +70,9 @@ jobs:
       - name: Commit refreshed screenshots
         # Push only from a same-repo pull request branch: GITHUB_TOKEN has no
         # write access on fork branches, and manual runs upload an artifact instead.
-        # A push made with GITHUB_TOKEN does not trigger the other workflows: main requires no check, so the
-        # pull request stays mergeable; rerun Lint/Validate by hand if a check on the bot commit is wanted.
+        # A push made with GITHUB_TOKEN does not trigger pull_request workflows, but workflow_dispatch does:
+        # the next step re-runs the checks on the screenshot commit so the pull request head is checked too.
+        id: push
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         run: |
           if [ -z "$(git status --porcelain screenshots)" ]; then
@@ -81,6 +84,15 @@ jobs:
           git add screenshots
           git commit -m "chore: refresh screenshots"
           git push
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
+      - name: Re-run checks on the screenshot commit
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && steps.push.outputs.pushed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for wf in lint.yml validate.yml hacs.yml; do
+            [ -f ".github/workflows/$wf" ] && gh workflow run "$wf" --ref "${{ github.head_ref }}"
+          done
       - name: Upload screenshots artifact
         if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0

@@ -189,6 +189,39 @@ test('the card and the editors resolve the language the same way', () => {
   assert.equal(ZoraxyCard.langOfHass(undefined), 'en');
 });
 
+test('the language option wins over the Home Assistant language', () => {
+  const card = makeCard({}, ZoraxyCard, { language: 'es' });
+  card._hass.locale.language = 'fr';
+  assert.equal(card._lang(), 'es');
+  assert.equal(card._t('certsSection'), 'Certificados');
+  card._config = { language: '' };
+  assert.equal(card._lang(), 'fr');
+  assert.equal(ZoraxyCard.langOfHass({ language: 'fr' }, { language: 'de' }), 'de');
+  assert.throws(() => new ZoraxyCard().setConfig({ language: 3 }), /language must be a string/);
+});
+
+test('the editors offer the language picker, labelled in the picked language', () => {
+  for (const Editor of [ZoraxyCardEditor, ZoraxyMiniCardEditor]) {
+    const editor = new Editor();
+    editor.appendChild = () => {};
+    context.document.createElement = () => ({ addEventListener() {} });
+    editor._hass = { locale: { language: 'en' } };
+    editor.setConfig({ language: 'de' });
+    const names = editor._form.schema.map((f) => f.name);
+    assert.equal(names.at(-1), 'language');
+    const picker = editor._form.schema.at(-1).selector.select.options;
+    assert.deepEqual([...picker.map((o) => o.value)], ['', 'en', 'fr', 'de', 'es']);
+    assert.equal(picker[0].label, ZoraxyCard.I18N.de.lang_auto);
+    assert.equal(editor._form.computeLabel({ name: 'language' }), 'Sprache');
+    editor.setConfig({});
+    assert.equal(editor._form.computeLabel({ name: 'language' }), 'Language');
+    let sent;
+    editor.dispatchEvent = (ev) => { sent = ev.detail.config; };
+    editor._valueChanged({ stopPropagation() {}, detail: { value: { zoraxy_url: 'http://z', language: '' } } });
+    assert.deepEqual({ ...sent }, { zoraxy_url: 'http://z' });
+  }
+});
+
 test('French control labels are translated', () => {
   assert.equal(ZoraxyCard.I18N.fr.httpsRedirect, 'Redirection HTTPS');
   assert.equal(ZoraxyCard.I18N.fr.devMode, 'Mode dev');

@@ -56,6 +56,7 @@ class ZoraxyCard extends HTMLElement {
       zoomIn: "Afficher la carte complète", zoomOut: "Revenir à la vue compacte",
       ruleCount: "{a}/{n} règles", certCount: "{n} certs",
       ed_zoom: "Bouton détail", ed_zoom_helper: "Bascule vers la carte complète et revient",
+      ed_language: "Langue", lang_auto: "Auto (langue de Home Assistant)",
     },
     en: {
       active: "Active", inactive: "Inactive",
@@ -73,6 +74,7 @@ class ZoraxyCard extends HTMLElement {
       zoomIn: "Show the full card", zoomOut: "Back to the compact view",
       ruleCount: "{a}/{n} rules", certCount: "{n} certs",
       ed_zoom: "Detail button", ed_zoom_helper: "Switches to the full card and back",
+      ed_language: "Language", lang_auto: "Auto (Home Assistant language)",
     },
     de: {
       active: "Aktiv", inactive: "Inaktiv",
@@ -90,6 +92,7 @@ class ZoraxyCard extends HTMLElement {
       zoomIn: "Vollständige Karte anzeigen", zoomOut: "Zurück zur kompakten Ansicht",
       ruleCount: "{a}/{n} Regeln", certCount: "{n} Zert.",
       ed_zoom: "Detail-Schaltfläche", ed_zoom_helper: "Wechselt zur vollständigen Karte und zurück",
+      ed_language: "Sprache", lang_auto: "Auto (Sprache von Home Assistant)",
     },
     es: {
       active: "Activo", inactive: "Inactivo",
@@ -107,6 +110,7 @@ class ZoraxyCard extends HTMLElement {
       zoomIn: "Mostrar la tarjeta completa", zoomOut: "Volver a la vista compacta",
       ruleCount: "{a}/{n} reglas", certCount: "{n} cert.",
       ed_zoom: "Botón de detalle", ed_zoom_helper: "Cambia a la tarjeta completa y vuelve",
+      ed_language: "Idioma", lang_auto: "Auto (idioma de Home Assistant)",
     },
   };
 
@@ -215,7 +219,7 @@ class ZoraxyCard extends HTMLElement {
 
   setConfig(config) {
     if (!config || typeof config !== "object") throw new Error("Invalid configuration");
-    for (const key of ["zoraxy_url", "entity_prefix"]) {
+    for (const key of ["zoraxy_url", "entity_prefix", "language"]) {
       if (config[key] != null && typeof config[key] !== "string") throw new Error(`${key} must be a string`);
     }
     this._config = config;
@@ -266,12 +270,13 @@ class ZoraxyCard extends HTMLElement {
 
 
   _lang() {
-    return ZoraxyCard.langOfHass(this._hass);
+    return ZoraxyCard.langOfHass(this._hass, this._config);
   }
 
-  // The card and its editors resolve the language the same way: the user's locale, then the server language.
-  static langOfHass(hass) {
-    return ZoraxyCard.langOf(hass?.locale?.language || hass?.language);
+  // The card and its editors resolve the language the same way: the card's `language` option, then the user's
+  // locale, then the server language.
+  static langOfHass(hass, config) {
+    return ZoraxyCard.langOf(config?.language || hass?.locale?.language || hass?.language);
   }
 
   // The supported language matching a locale ("de-AT" → "de"), English otherwise.
@@ -737,6 +742,18 @@ class ZoraxyCardEditor extends HTMLElement {
     { name: "entity_prefix", selector: { text: {} } },
   ];
 
+  // The fields, then the language picker (its "Auto" label in the editor's language).
+  static schema(t) {
+    const options = [
+      { value: "", label: t("lang_auto") },
+      { value: "en", label: "English" },
+      { value: "fr", label: "Français" },
+      { value: "de", label: "Deutsch" },
+      { value: "es", label: "Español" },
+    ];
+    return [...this.SCHEMA, { name: "language", selector: { select: { mode: "dropdown", options } } }];
+  }
+
   static DEFAULTS = { entity_prefix: "zoraxy_reverse_proxy_zoraxy" };
 
   setConfig(config) {
@@ -753,14 +770,18 @@ class ZoraxyCardEditor extends HTMLElement {
   _render() {
     if (!this._hass || !this._config) return;
     if (!this._form) {
-      const lang = ZoraxyCard.langOfHass(this._hass);
-      const t = (key) => ZoraxyCard.I18N[lang][key];
       this._form = document.createElement("ha-form");
-      this._form.schema = this.constructor.SCHEMA;
-      this._form.computeLabel = (field) => t(`ed_${field.name}`) || field.name;
-      this._form.computeHelper = (field) => t(`ed_${field.name}_helper`);
       this._form.addEventListener("value-changed", this._valueChanged.bind(this));
       this.appendChild(this._form);
+    }
+    // The labels follow the language picked in the editor: rebuilt only when it changes.
+    const lang = ZoraxyCard.langOfHass(this._hass, this._config);
+    if (lang !== this._lang) {
+      this._lang = lang;
+      const t = (key) => ZoraxyCard.I18N[lang][key];
+      this._form.schema = this.constructor.schema(t);
+      this._form.computeLabel = (field) => t(`ed_${field.name}`) || field.name;
+      this._form.computeHelper = (field) => t(`ed_${field.name}_helper`);
     }
     this._form.hass = this._hass;
     // Show the defaults as set, so the fields match what the card does.
@@ -775,7 +796,7 @@ class ZoraxyCardEditor extends HTMLElement {
     Object.keys(defaults).forEach((key) => {
       if (value[key] === defaults[key]) delete value[key];
     });
-    ["zoraxy_url", "entity_prefix"].forEach((key) => { if (!value[key]) delete value[key]; });
+    ["zoraxy_url", "entity_prefix", "language"].forEach((key) => { if (!value[key]) delete value[key]; });
     this._config = value;
     this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: value }, bubbles: true, composed: true }));
   }

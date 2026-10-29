@@ -84,6 +84,24 @@ test('I18N locales all carry the same keys', () => {
   }
 });
 
+test('every I18N key is read by the card or an editor', () => {
+  // Source outside the I18N table: keys passed to _t() / t() as string literals.
+  const code = source.replace(/static I18N = \{[\s\S]*?\n {2}\};\n/, '');
+  const used = new Set();
+  for (const call of code.matchAll(/\b_?t\(([^()]*)\)/g)) {
+    for (const lit of call[1].matchAll(/["']([A-Za-z0-9_]+)["']/g)) used.add(lit[1]);
+  }
+  // Editor labels are built as ed_<field> and ed_<field>_helper.
+  const fields = new Set(
+    [ZoraxyCardEditor, ZoraxyMiniCardEditor].flatMap((E) => E.schema(() => '').map((f) => f.name)),
+  );
+  const unused = Object.keys(ZoraxyCard.I18N.en).filter((key) => {
+    const ed = key.match(/^ed_(.+?)(_helper)?$/);
+    return ed ? !fields.has(ed[1]) : !used.has(key);
+  });
+  assert.deepEqual(unused, []);
+});
+
 test('_t falls back to English, then to the key', () => {
   const card = makeCard();
   card._hass.locale.language = 'ja';

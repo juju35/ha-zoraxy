@@ -1,4 +1,4 @@
-const ZORAXY_CARD_VERSION = '1.11.3';
+const ZORAXY_CARD_VERSION = '1.11.4';
 
 // Escapes a value interpolated into innerHTML, as text or inside a quoted attribute (as parcelEsc in ha-parcel).
 function zoraxyEsc(s) {
@@ -47,7 +47,6 @@ class ZoraxyCard extends HTMLElement {
       certsSection: "Certificats", proxyRules: "Règles proxy", redirections: "Redirections",
       noCerts: "Aucun certificat trouvé.", noRules: "Aucune règle configurée.", noRedirects: "Aucune redirection configurée.",
       expired: "Expiré", renew: "Renouveler", daysLeft: "J-{n}",
-      domain: "Domaine", target: "Cible", status: "État",
       on: "On", off: "Off",
       enableRule: "Activer", disableRule: "Désactiver",
       ed_zoraxy_url: "URL de Zoraxy", ed_entity_prefix: "Préfixe des entités",
@@ -65,7 +64,6 @@ class ZoraxyCard extends HTMLElement {
       certsSection: "Certificates", proxyRules: "Proxy rules", redirections: "Redirections",
       noCerts: "No certificate found.", noRules: "No rule configured.", noRedirects: "No redirect configured.",
       expired: "Expired", renew: "Renew", daysLeft: "{n} d",
-      domain: "Domain", target: "Target", status: "Status",
       on: "On", off: "Off",
       enableRule: "Enable", disableRule: "Disable",
       ed_zoraxy_url: "Zoraxy URL", ed_entity_prefix: "Entity prefix",
@@ -83,7 +81,6 @@ class ZoraxyCard extends HTMLElement {
       certsSection: "Zertifikate", proxyRules: "Proxy-Regeln", redirections: "Weiterleitungen",
       noCerts: "Kein Zertifikat gefunden.", noRules: "Keine Regel konfiguriert.", noRedirects: "Keine Weiterleitung konfiguriert.",
       expired: "Abgelaufen", renew: "Erneuern", daysLeft: "{n} T",
-      domain: "Domain", target: "Ziel", status: "Status",
       on: "An", off: "Aus",
       enableRule: "Aktivieren", disableRule: "Deaktivieren",
       ed_zoraxy_url: "Zoraxy-URL", ed_entity_prefix: "Entitätspräfix",
@@ -101,7 +98,6 @@ class ZoraxyCard extends HTMLElement {
       certsSection: "Certificados", proxyRules: "Reglas de proxy", redirections: "Redirecciones",
       noCerts: "No se encontró ningún certificado.", noRules: "Ninguna regla configurada.", noRedirects: "Ninguna redirección configurada.",
       expired: "Caducado", renew: "Renovar", daysLeft: "{n} d",
-      domain: "Dominio", target: "Destino", status: "Estado",
       on: "On", off: "Off",
       enableRule: "Activar", disableRule: "Desactivar",
       ed_zoraxy_url: "URL de Zoraxy", ed_entity_prefix: "Prefijo de las entidades",

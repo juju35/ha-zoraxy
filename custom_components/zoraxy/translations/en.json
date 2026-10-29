@@ -125,7 +125,7 @@
       "message": "No Zoraxy instance is loaded"
     },
     "rule_not_found": {
-      "message": "Zoraxy proxy rule '{domain}' not found"
+      "message": "Zoraxy proxy rule {domain} not found"
     },
     "rule_change_failed": {
       "message": "Zoraxy: could not change the rule {domain}: {error}"

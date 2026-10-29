@@ -133,6 +133,9 @@
     "acme_email_unavailable": {
       "message": "Zoraxy : e-mail ACME indisponible"
     },
+    "wildcard_renewal": {
+      "message": "Zoraxy : {domain} est un certificat wildcard, qui exige un challenge DNS : renouvelez-le dans Zoraxy"
+    },
     "renewal_failed": {
       "message": "Zoraxy : échec du renouvellement de {domain} : {error}"
     },

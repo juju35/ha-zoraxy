@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.11.4
+### Maintenance
+- Card: removed three unused translations (domain, target, status) from the four languages; nothing changes on screen.
+
 ## 1.11.3
 ### Fixes
 - A wildcard certificate (`*.example.org`, which Zoraxy lists as `_.example.org`) now shows its expiry date, so its expiring alert works; certificates imported under a name that is not one of their domains get their expiry date too.

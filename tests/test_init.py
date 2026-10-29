@@ -694,6 +694,62 @@ async def test_expiry_prefers_the_certificate_named_after_the_domain(hass, aiocl
     assert hass.states.get(f"sensor.{P}_cert_www_example_org").state == "2030-01-01T00:00:00+00:00"
 
 
+async def test_wildcard_cert_file_gets_expiry(hass, aioclient_mock, entry):
+    """Zoraxy stores *.example.org as _.example.org: the expiry is found through the key file name."""
+    cert = {"DNSNames": ["*.example.org"], "NotAfter": "2020-11-01T00:00:00Z"}
+    loaded = [{"PriKey": "./conf/certs/_.example.org.key", "Cert": cert}]
+    status = {"Option": {**PROXY_STATUS["Option"], "TlsManager": {"LoadedCerts": loaded}}}
+    mock_zoraxy(aioclient_mock, status=status, certs=["_.example.org"])
+    await _setup(hass, entry)
+    assert hass.states.get(f"sensor.{P}_cert_example_org").state == "2020-11-01T00:00:00+00:00"
+    assert hass.states.get(f"binary_sensor.{P}_cert_expirant_example_org").state == "on"
+
+
+@pytest.mark.parametrize(
+    ("pri_key", "name"),
+    [
+        # Zoraxy running on Windows.
+        ("conf\\certs\\imported.key", "imported"),
+        # A certificate imported under a name found in none of its SANs.
+        ("./conf/certs/imported.key", "imported"),
+    ],
+)
+async def test_expiry_keyed_by_key_file_name(hass, aioclient_mock, entry, pri_key, name):
+    """The file listed by /api/cert/list is the key file name, whatever the SANs of the certificate."""
+    cert = {"DNSNames": ["host.example.org"], "NotAfter": "2099-01-01T00:00:00Z"}
+    status = {"Option": {**PROXY_STATUS["Option"], "TlsManager": {"LoadedCerts": [{"PriKey": pri_key, "Cert": cert}]}}}
+    mock_zoraxy(aioclient_mock, status=status, certs=[name])
+    await _setup(hass, entry)
+    assert hass.states.get(f"sensor.{P}_cert_{name}").state == "2099-01-01T00:00:00+00:00"
+
+
+async def test_key_file_name_wins_over_another_certificate_san(hass, aioclient_mock, entry):
+    """A file named after a SAN of another certificate keeps the expiry of its own certificate."""
+    apex = {"DNSNames": ["example.org", "www.example.org"], "NotAfter": "2099-01-01T00:00:00Z"}
+    www = {"DNSNames": ["other.example.org", "www.example.org"], "NotAfter": "2030-01-01T00:00:00Z"}
+    loaded = [
+        {"PriKey": "./conf/certs/example.org.key", "Cert": apex},
+        {"PriKey": "./conf/certs/www.example.org.key", "Cert": www},
+    ]
+    status = {"Option": {**PROXY_STATUS["Option"], "TlsManager": {"LoadedCerts": loaded}}}
+    mock_zoraxy(aioclient_mock, status=status, certs=["example.org", "www.example.org"])
+    await _setup(hass, entry)
+    assert hass.states.get(f"sensor.{P}_cert_example_org").state == "2099-01-01T00:00:00+00:00"
+    assert hass.states.get(f"sensor.{P}_cert_www_example_org").state == "2030-01-01T00:00:00+00:00"
+
+
+async def test_wildcard_renew_is_refused(hass, aioclient_mock, entry):
+    """A wildcard needs a DNS challenge: the button explains it instead of sending a renewal that cannot succeed."""
+    mock_zoraxy(aioclient_mock, certs=["_.example.org"])
+    aioclient_mock.get(f"{HOST}/api/acme/obtainCert", text='"OK"')
+    await _setup(hass, entry)
+    with pytest.raises(HomeAssistantError, match="DNS challenge"):
+        await hass.services.async_call(
+            "button", "press", {"entity_id": f"button.{P}_renouveler_example_org"}, blocking=True
+        )
+    assert not _calls(aioclient_mock, "/api/acme/obtainCert", method="get")
+
+
 async def test_new_certificate_gets_entities_without_reload(hass, aioclient_mock, entry):
     """A certificate added in Zoraxy gets its sensor, binary sensor and renew button at the next update."""
     mock_zoraxy(aioclient_mock)

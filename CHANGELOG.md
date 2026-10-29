@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.11.1
+### Fixes
+- A certificate whose name is also a secondary name of another certificate (for example a `www.example.org` certificate next to an `example.org` certificate that also covers `www.example.org`) shows its own expiry date again, so its expiring alert is no longer hidden by the other certificate.
+
 ## 1.11.0
 ### What's new
 - Card: new `language` option (also in the visual editors of both cards) to force English, French, German or Spanish instead of the Home Assistant language.

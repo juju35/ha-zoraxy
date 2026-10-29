@@ -12,6 +12,8 @@ on:
 # back onto the pull request's own branch, so they land through the normal merge.
 permissions:
   contents: write
+  # Lets the job re-dispatch the checks on its own screenshot commit (see below).
+  actions: write
 
 concurrency:
   group: screenshots-${{ github.head_ref || github.ref_name }}
@@ -24,29 +26,40 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # On a fork pull request the head branch only exists in the fork:
-          # checkout it from there (the commit step below never pushes to forks).
-          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
-          ref: ${{ github.head_ref || github.ref_name }}
+          # Fork PR branches do not exist in this repository: only check out the
+          # head branch for same-repo PRs (where screenshots get pushed back).
+          # Everything else keeps the default ref — for a fork PR that is the merge
+          # ref, which github.ref_name ("N/merge") does not resolve to.
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref || '' }}
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.13"
-      - run: pip install playwright
-      # Download the browser binary (no apt here) separately from its system libraries, so the apt work all sits in
-      # the one time-boxed, retried step below and a hung mirror can never stall an unguarded install.
-      - run: playwright install chromium
+      - run: pip install playwright==1.64.1
+      # Download the browser binary (no apt here) separately from its system libraries. The download is time-boxed
+      # and retried too, so a stalled CDN is abandoned instead of freezing the job.
+      - name: Install Chromium
+        timeout-minutes: 8
+        run: |
+          ok=
+          for i in 1 2 3; do
+            timeout 150 playwright install chromium && ok=1 && break
+            echo "Chromium download attempt $i failed or timed out, retrying in 15s"; sleep 15
+          done
+          [ -n "$ok" ] || { echo "::error::Chromium download failed 3 times"; exit 1; }
       # Roboto + the browser's apt deps, each apt call time-boxed and retried so a flaky mirror is
       # abandoned and retried instead of hanging. No ffmpeg: this card has no animation to record.
       - name: Install Roboto and browser deps
         timeout-minutes: 12
         run: |
+          ok=
           for i in 1 2 3; do
             timeout 150 sudo apt-get update \
               && timeout 300 sudo apt-get install -y fonts-roboto \
               && timeout 300 playwright install-deps chromium \
-              && break
+              && ok=1 && break
             echo "apt attempt $i failed or timed out, retrying in 15s"; sleep 15
           done
+          [ -n "$ok" ] || { echo "::error::apt failed 3 times"; exit 1; }
       - name: Render screenshots
         run: |
           set -o pipefail
@@ -57,6 +70,9 @@ jobs:
       - name: Commit refreshed screenshots
         # Push only from a same-repo pull request branch: GITHUB_TOKEN has no
         # write access on fork branches, and manual runs upload an artifact instead.
+        # A push made with GITHUB_TOKEN does not trigger pull_request workflows, but workflow_dispatch does:
+        # the next step re-runs the checks on the screenshot commit so the pull request head is checked too.
+        id: push
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         run: |
           if [ -z "$(git status --porcelain screenshots)" ]; then
@@ -68,6 +84,15 @@ jobs:
           git add screenshots
           git commit -m "chore: refresh screenshots"
           git push
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
+      - name: Re-run checks on the screenshot commit
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && steps.push.outputs.pushed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for wf in lint.yml validate.yml hacs.yml; do
+            [ -f ".github/workflows/$wf" ] && gh workflow run "$wf" --ref "${{ github.head_ref }}"
+          done
       - name: Upload screenshots artifact
         if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0

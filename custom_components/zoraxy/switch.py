@@ -7,6 +7,7 @@ from homeassistant.exceptions import HomeAssistantError
 
 from . import ZoraxyDataUpdateCoordinator
 from .api import ZoraxyError
+from .const import DOMAIN
 from .entity import ZoraxyEntity
 
 
@@ -27,8 +28,8 @@ class ZoraxyBaseSwitch(ZoraxyEntity, SwitchEntity):
     def _option(self, key: str) -> bool:
         """Read a flag of the proxy options, as the binary sensors do."""
         status = self._data().get("proxy_status", {})
-        option = status.get("Option", {}) if isinstance(status, dict) else {}
-        return bool((option or {}).get(key, False))
+        option = (status.get("Option") or {}) if isinstance(status, dict) else {}
+        return bool(option.get(key, False))
 
     # Zoraxy endpoint, parameter name and HTTP method: each handler reads its own (src/reverseproxy.go).
     _endpoint: str
@@ -41,7 +42,11 @@ class ZoraxyBaseSwitch(ZoraxyEntity, SwitchEntity):
                 self._endpoint, self._method, fields={self._field: "true" if enable else "false"}
             )
         except ZoraxyError as err:
-            raise HomeAssistantError(f"Zoraxy: {err}") from err
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="command_failed",
+                translation_placeholders={"error": str(err)},
+            ) from err
         await self.coordinator.async_request_refresh()
 
 

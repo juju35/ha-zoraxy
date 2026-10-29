@@ -168,3 +168,61 @@ test('the mini card editor adds zoom to the full editor schema', () => {
   assert.equal(mini.join(), [...base, 'zoom'].join());
   assert.equal(ZoraxyMiniCardEditor.DEFAULTS.zoom, true);
 });
+
+test('mini chips show a dash, not the raw state, for unknown or unavailable values', () => {
+  const states = {
+    [`sensor.${PREFIX}_regles_proxy`]: { state: 'unavailable', attributes: {} },
+    [`sensor.${PREFIX}_regles_actives`]: { state: 'unavailable', attributes: {} },
+    [`sensor.${PREFIX}_certificats_tls`]: { state: '2', attributes: {} },
+    [`sensor.${PREFIX}_port_entrant`]: { state: 'unknown', attributes: {} },
+  };
+  const html = makeCard(states, ZoraxyMiniCard)._miniChips();
+  assert.ok(!/unknown|unavailable/.test(html), html);
+  assert.match(html, /Port –/);
+  assert.match(html, /–\/– rules/);
+  assert.match(html, /2 certs/);
+});
+
+test('the card and the editors resolve the language the same way', () => {
+  assert.equal(ZoraxyCard.langOfHass({ locale: { language: 'de-AT' }, language: 'fr' }), 'de');
+  assert.equal(ZoraxyCard.langOfHass({ language: 'fr' }), 'fr');
+  assert.equal(ZoraxyCard.langOfHass(undefined), 'en');
+});
+
+test('the language option wins over the Home Assistant language', () => {
+  const card = makeCard({}, ZoraxyCard, { language: 'es' });
+  card._hass.locale.language = 'fr';
+  assert.equal(card._lang(), 'es');
+  assert.equal(card._t('certsSection'), 'Certificados');
+  card._config = { language: '' };
+  assert.equal(card._lang(), 'fr');
+  assert.equal(ZoraxyCard.langOfHass({ language: 'fr' }, { language: 'de' }), 'de');
+  assert.throws(() => new ZoraxyCard().setConfig({ language: 3 }), /language must be a string/);
+});
+
+test('the editors offer the language picker, labelled in the picked language', () => {
+  for (const Editor of [ZoraxyCardEditor, ZoraxyMiniCardEditor]) {
+    const editor = new Editor();
+    editor.appendChild = () => {};
+    context.document.createElement = () => ({ addEventListener() {} });
+    editor._hass = { locale: { language: 'en' } };
+    editor.setConfig({ language: 'de' });
+    const names = editor._form.schema.map((f) => f.name);
+    assert.equal(names.at(-1), 'language');
+    const picker = editor._form.schema.at(-1).selector.select.options;
+    assert.deepEqual([...picker.map((o) => o.value)], ['', 'en', 'fr', 'de', 'es']);
+    assert.equal(picker[0].label, ZoraxyCard.I18N.de.lang_auto);
+    assert.equal(editor._form.computeLabel({ name: 'language' }), 'Sprache');
+    editor.setConfig({});
+    assert.equal(editor._form.computeLabel({ name: 'language' }), 'Language');
+    let sent;
+    editor.dispatchEvent = (ev) => { sent = ev.detail.config; };
+    editor._valueChanged({ stopPropagation() {}, detail: { value: { zoraxy_url: 'http://z', language: '' } } });
+    assert.deepEqual({ ...sent }, { zoraxy_url: 'http://z' });
+  }
+});
+
+test('French control labels are translated', () => {
+  assert.equal(ZoraxyCard.I18N.fr.httpsRedirect, 'Redirection HTTPS');
+  assert.equal(ZoraxyCard.I18N.fr.devMode, 'Mode dev');
+});

@@ -8,7 +8,7 @@ from homeassistant.components.binary_sensor import BinarySensorDeviceClass, Bina
 
 from . import ZoraxyDataUpdateCoordinator
 from .const import EXPIRY_WARNING_DAYS, safe_domain
-from .entity import ZoraxyDomainEntity, ZoraxyEntity
+from .entity import ZoraxyDomainEntity, ZoraxyEntity, async_track_cert_entities
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
@@ -20,7 +20,12 @@ async def async_setup_entry(hass, entry, async_add_entities):
             ZoraxyHttpsRedirectBinarySensor(coordinator, entry),
             ZoraxyPort80BinarySensor(coordinator, entry),
             ZoraxyDevModeBinarySensor(coordinator, entry),
-            *[ZoraxyCertExpiringBinarySensor(coordinator, entry, d) for d in coordinator.data.get("cert_list", [])],
+            *async_track_cert_entities(
+                coordinator,
+                entry,
+                async_add_entities,
+                lambda d: [ZoraxyCertExpiringBinarySensor(coordinator, entry, d)],
+            ),
         ]
     )
 
@@ -30,7 +35,8 @@ class ZoraxyBaseBinarySensor(ZoraxyEntity, BinarySensorEntity):
 
     def _option(self) -> dict:
         status = self._data().get("proxy_status", {})
-        return status.get("Option", {}) if isinstance(status, dict) else {}
+        # "Option": null must not break the state: fall back to no option, as switch.py does.
+        return (status.get("Option") or {}) if isinstance(status, dict) else {}
 
 
 # ── System sensors ───────────────────────────────────────────────────────────

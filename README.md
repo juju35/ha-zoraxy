@@ -86,6 +86,7 @@ zoraxy_url: http://zoraxy.local:8000
 |---|---|---|
 | `zoraxy_url` | — | Zoraxy web interface (`http://` or `https://`), opened from the card title and shown under it |
 | `entity_prefix` | `zoraxy_reverse_proxy_zoraxy` | Common part of the entity ids |
+| `language` | Auto | Force the card language: `en`, `fr`, `de` or `es` (by default, the Home Assistant language) |
 
 With two Zoraxy instances, the second one's entities get `_2`-suffixed ids (`…_regles_proxy_2`) that the card cannot tell apart from the first instance's. Rename that instance's entity ids to their own prefix (for example `zoraxy_b_regles_proxy`, in **Settings → Devices & services → Entities**) and set `entity_prefix: zoraxy_b` on its card.
 
@@ -196,7 +197,7 @@ python scripts/screenshots.py   # renders both cards with mock entities into scr
 
 ## Translations
 
-The integration and the card follow the language of Home Assistant. Currently supported:
+The integration and the card follow the language of Home Assistant (the card's `language` option can force another one). Currently supported:
 
 | Language | Code |
 |---|---|

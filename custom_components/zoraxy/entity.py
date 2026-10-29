@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable, Iterable
+
+from homeassistant.core import callback
 from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import slugify
 
@@ -44,3 +48,29 @@ class ZoraxyDomainEntity(ZoraxyEntity):
         self._legacy_name = self._legacy_name.format(domain=domain_name)
         self._attr_translation_placeholders = {"domain": domain_name}
         super().__init__(coordinator, entry)
+
+
+def async_track_cert_entities(
+    coordinator: ZoraxyDataUpdateCoordinator,
+    entry,
+    async_add_entities: Callable[[Iterable[Entity]], None],
+    factory: Callable[[str], Iterable[Entity]],
+) -> list[Entity]:
+    """Entities of the certificates listed now; those of a certificate added later in Zoraxy follow at its update.
+
+    Without this, a new certificate only got its entities after a reload, while the count sensor already counted it.
+    """
+    known: set[str] = set()
+
+    def new_entities() -> list[Entity]:
+        domains = [d for d in (coordinator.data or {}).get("cert_list", []) if isinstance(d, str) and d not in known]
+        known.update(domains)
+        return [entity for domain in domains for entity in factory(domain)]
+
+    @callback
+    def _check() -> None:
+        if entities := new_entities():
+            async_add_entities(entities)
+
+    entry.async_on_unload(coordinator.async_add_listener(_check))
+    return new_entities()

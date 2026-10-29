@@ -229,7 +229,7 @@ def _async_toggle_proxy_rule(hass: HomeAssistant):
             if entry.state is ConfigEntryState.LOADED
         ]
         if not coordinators:
-            raise ServiceValidationError("No Zoraxy instance is loaded")
+            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="no_instance")
         # With several Zoraxy instances, the rule belongs to the one that lists the domain.
         match = next(
             (
@@ -241,7 +241,11 @@ def _async_toggle_proxy_rule(hass: HomeAssistant):
             None,
         )
         if match is None:
-            raise ServiceValidationError(f"Zoraxy proxy rule '{domain_name}' not found")
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="rule_not_found",
+                translation_placeholders={"domain": domain_name},
+            )
         coordinator, rule = match
         # Left out, enable toggles the rule: a disabled rule gets enabled.
         should_enable = bool(rule.get("Disabled", False)) if enable is None else enable
@@ -249,7 +253,11 @@ def _async_toggle_proxy_rule(hass: HomeAssistant):
         try:
             await coordinator.client.command("/api/proxy/toggle", fields={"ep": domain_name, "enable": set_value})
         except ZoraxyError as err:
-            raise HomeAssistantError(f"Zoraxy: could not change the rule '{domain_name}': {err}") from err
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="rule_change_failed",
+                translation_placeholders={"domain": domain_name, "error": str(err)},
+            ) from err
         _LOGGER.debug("Zoraxy toggle_proxy_rule '%s' enable=%s", domain_name, set_value)
         await coordinator.async_request_refresh()
 
@@ -281,7 +289,10 @@ class ZoraxyDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     async def renew_certificate(self, domain: str) -> None:
         """Ask Zoraxy for a new ACME certificate. Raises HomeAssistantError on failure."""
         if not self._acme_email:
-            raise HomeAssistantError("Zoraxy: ACME email not available")
+            # Not read yet (Zoraxy was starting, a request timed out): read it now instead of at the next poll.
+            await self._async_fetch_acme()
+        if not self._acme_email:
+            raise HomeAssistantError(translation_domain=DOMAIN, translation_key="acme_email_unavailable")
         try:
             await self.client.command(
                 "/api/acme/obtainCert",
@@ -296,22 +307,54 @@ class ZoraxyDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 timeout=120,
             )
         except ZoraxyError as err:
-            raise HomeAssistantError(f"Zoraxy: renewal of {domain} failed: {err}") from err
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="renewal_failed",
+                translation_placeholders={"domain": domain, "error": str(err)},
+            ) from err
         _LOGGER.info("Zoraxy: certificate %s renewed", domain)
 
     def _extract_cert_expiry(self, proxy_status: dict) -> dict[str, str]:
         all_certs = ((proxy_status.get("Option") or {}).get("TlsManager") or {}).get("LoadedCerts") or []
         result, seen = {}, set()
         for c in all_certs:
+            if not isinstance(c, dict):
+                continue
             pk = c.get("PriKey", "")
             if not pk or pk in seen:
                 continue
             seen.add(pk)
-            cert = c.get("Cert", {})
+            cert = c.get("Cert")
+            if not isinstance(cert, dict):
+                continue
             dns = cert.get("DNSNames") or []
             if dns and (expiry := cert.get("NotAfter", "")):
-                result[dns[0]] = expiry
+                # Every name of the certificate: the file listed by /api/cert/list may be named after any of its SANs.
+                for name in dns:
+                    if isinstance(name, str):
+                        result.setdefault(name, expiry)
         return result
+
+    def _store_acme(self, acme_email: Any, acme_ca: Any) -> bool:
+        """Keep the ACME settings read from Zoraxy. True when the email could be read."""
+        if isinstance(acme_ca, str):
+            self._acme_ca = acme_ca.strip('"') or "Let's Encrypt"
+        if not isinstance(acme_email, str):
+            return False
+        self._acme_email = acme_email.strip('"')
+        return True
+
+    async def _async_fetch_acme(self) -> None:
+        """Read the ACME auto-renew settings now (renewal with no email known yet)."""
+        try:
+            acme_email, acme_ca = await asyncio.gather(
+                self._optional("/api/acme/autoRenew/email"), self._optional("/api/acme/autoRenew/ca")
+            )
+        except ZoraxyError as err:
+            _LOGGER.debug("Zoraxy: could not read the ACME settings: %s", err)
+            return
+        if self._store_acme(acme_email, acme_ca):
+            self._acme_checked = time.monotonic()
 
     async def _optional(self, endpoint: str, method: str = "GET", fields: dict[str, str] | None = None) -> Any:
         """An endpoint whose failure keeps the previous data instead of failing the update."""
@@ -345,17 +388,14 @@ class ZoraxyDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             # type=root answers the root object alone (zsrc/rp.go), not a rule list: only host rules are listed.
             host_rules, cert_list, redirect_list, access_rules, *acme = await asyncio.gather(*requests)
             acme_email, acme_ca = acme or (None, None)
-            if fetch_acme:
-                self._acme_checked = time.monotonic()
         except ZoraxyAuthError as err:
             raise ConfigEntryAuthFailed(str(err)) from err
         except ZoraxyError as err:
             raise UpdateFailed(str(err)) from err
 
-        if isinstance(acme_email, str):
-            self._acme_email = acme_email.strip('"')
-        if isinstance(acme_ca, str):
-            self._acme_ca = acme_ca.strip('"') or "Let's Encrypt"
+        # Only a successful read delays the next one by an hour: after a failure it is retried at the next poll.
+        if fetch_acme and self._store_acme(acme_email, acme_ca):
+            self._acme_checked = time.monotonic()
 
         proxy_list = host_rules if isinstance(host_rules, list) else self._previous("proxy_list")
 

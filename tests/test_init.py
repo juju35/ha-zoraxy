@@ -575,3 +575,116 @@ async def test_card_resource_yaml_mode_uses_extra_js(hass, aioclient_mock, entry
     mock_zoraxy(aioclient_mock)
     await _setup(hass, entry)
     stub_frontend.assert_called_once()
+
+
+# ── Review pass 2 regressions ─────────────────────────────────────────────────
+
+
+async def test_acme_failure_is_retried_at_next_poll(hass, aioclient_mock, entry):
+    """A failed ACME read at the first refresh does not wait an hour: the next poll reads it again."""
+    mock_zoraxy(aioclient_mock)
+    aioclient_mock.clear_requests()
+    aioclient_mock.get(f"{HOST}/api/acme/autoRenew/email", status=500, text="boom")
+    aioclient_mock.get(f"{HOST}/api/acme/autoRenew/ca", status=500, text="boom")
+    mock_zoraxy(aioclient_mock)
+    await _setup(hass, entry)
+    coordinator = entry.runtime_data
+    assert coordinator._acme_email is None
+    assert coordinator._acme_checked is None
+
+    aioclient_mock.clear_requests()
+    mock_zoraxy(aioclient_mock)
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+    assert coordinator._acme_email == "me@example.org"
+    assert coordinator._acme_checked is not None
+
+
+async def test_renew_reads_missing_acme_email(hass, aioclient_mock, entry):
+    """With no ACME email known yet, the renewal reads it instead of failing."""
+    aioclient_mock.get(f"{HOST}/api/acme/autoRenew/email", status=500, text="boom")
+    aioclient_mock.get(f"{HOST}/api/acme/autoRenew/ca", status=500, text="boom")
+    mock_zoraxy(aioclient_mock)
+    await _setup(hass, entry)
+    assert entry.runtime_data._acme_email is None
+
+    aioclient_mock.clear_requests()
+    mock_zoraxy(aioclient_mock)
+    aioclient_mock.get(f"{HOST}/api/acme/obtainCert", text='"OK"')
+    await hass.services.async_call(
+        "button", "press", {"entity_id": f"button.{P}_renouveler_a_example_org"}, blocking=True
+    )
+    (_, url, _, _) = _calls(aioclient_mock, "/api/acme/obtainCert", method="get")[0]
+    assert url.query["email"] == "me@example.org"
+
+
+async def test_renew_without_acme_email_fails(hass, aioclient_mock, entry):
+    aioclient_mock.get(f"{HOST}/api/acme/autoRenew/email", status=500, text="boom")
+    aioclient_mock.get(f"{HOST}/api/acme/autoRenew/ca", status=500, text="boom")
+    mock_zoraxy(aioclient_mock)
+    await _setup(hass, entry)
+    with pytest.raises(HomeAssistantError, match="ACME email not available"):
+        await hass.services.async_call(
+            "button", "press", {"entity_id": f"button.{P}_renouveler_a_example_org"}, blocking=True
+        )
+
+
+@pytest.mark.parametrize("loaded", [[{"PriKey": "a.key", "Cert": None}], ["junk", None], [{"PriKey": "a.key"}]])
+async def test_malformed_loaded_certs_keep_entities_available(hass, aioclient_mock, entry, loaded):
+    """A null Cert or a non-object entry in LoadedCerts must not fail the whole update."""
+    status = {"Option": {**PROXY_STATUS["Option"], "TlsManager": {"LoadedCerts": loaded}}}
+    mock_zoraxy(aioclient_mock, status=status)
+    await _setup(hass, entry)
+    assert entry.state is ConfigEntryState.LOADED
+    assert hass.states.get(f"binary_sensor.{P}_proxy_actif").state == "on"
+    assert hass.states.get(f"sensor.{P}_cert_a_example_org").state == "unknown"
+
+
+async def test_null_option_keeps_entities_working(hass, aioclient_mock, entry):
+    """ "Option": null reads as no option in every platform instead of raising in the state properties."""
+    mock_zoraxy(aioclient_mock, status={"Option": None})
+    await _setup(hass, entry)
+    assert entry.state is ConfigEntryState.LOADED
+    assert hass.states.get(f"binary_sensor.{P}_proxy_actif").state == "off"
+    assert hass.states.get(f"binary_sensor.{P}_tls_active").state == "off"
+    assert hass.states.get(f"sensor.{P}_port_entrant").state == "unknown"
+    assert hass.states.get(f"switch.{P}_ecoute_port_80").state == "off"
+
+
+async def test_expiry_found_by_any_san(hass, aioclient_mock, entry):
+    """A certificate file named after its second SAN still gets its expiry date."""
+    cert = {"DNSNames": ["example.org", "www.example.org"], "NotAfter": "2099-01-01T00:00:00Z"}
+    status = {"Option": {**PROXY_STATUS["Option"], "TlsManager": {"LoadedCerts": [{"PriKey": "w.key", "Cert": cert}]}}}
+    mock_zoraxy(aioclient_mock, status=status, certs=["www.example.org"])
+    await _setup(hass, entry)
+    assert hass.states.get(f"sensor.{P}_cert_www_example_org").state == "2099-01-01T00:00:00+00:00"
+    assert hass.states.get(f"binary_sensor.{P}_cert_expirant_www_example_org").state == "off"
+
+
+async def test_new_certificate_gets_entities_without_reload(hass, aioclient_mock, entry):
+    """A certificate added in Zoraxy gets its sensor, binary sensor and renew button at the next update."""
+    mock_zoraxy(aioclient_mock)
+    await _setup(hass, entry)
+    assert hass.states.get(f"sensor.{P}_cert_b_example_org") is None
+
+    aioclient_mock.clear_requests()
+    mock_zoraxy(aioclient_mock, certs=["a.example.org", "b.example.org"])
+    await entry.runtime_data.async_refresh()
+    await hass.async_block_till_done()
+    assert hass.states.get(f"sensor.{P}_cert_b_example_org") is not None
+    assert hass.states.get(f"binary_sensor.{P}_cert_expirant_b_example_org") is not None
+    assert hass.states.get(f"button.{P}_renouveler_b_example_org") is not None
+    # The certificates already known are not added twice.
+    registry = er.async_get(hass)
+    unique_ids = [e.unique_id for e in er.async_entries_for_config_entry(registry, entry.entry_id)]
+    assert len(unique_ids) == len(set(unique_ids))
+
+
+async def test_errors_are_translated(hass, aioclient_mock, entry):
+    """Service and entity errors carry a translation key of the integration."""
+    mock_zoraxy(aioclient_mock)
+    await _setup(hass, entry)
+    with pytest.raises(ServiceValidationError) as err:
+        await hass.services.async_call(DOMAIN, "toggle_proxy_rule", {"domain": "nope.example.org"}, blocking=True)
+    assert (err.value.translation_domain, err.value.translation_key) == (DOMAIN, "rule_not_found")
+    assert "nope.example.org" in str(err.value)

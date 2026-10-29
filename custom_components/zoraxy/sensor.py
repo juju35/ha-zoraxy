@@ -8,7 +8,7 @@ from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, Sen
 
 from . import ZoraxyDataUpdateCoordinator
 from .const import safe_domain
-from .entity import ZoraxyDomainEntity, ZoraxyEntity
+from .entity import ZoraxyDomainEntity, ZoraxyEntity, async_track_cert_entities
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
@@ -19,7 +19,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
         ZoraxyCertCountSensor(coordinator, entry),
         ZoraxyAccessRulesCountSensor(coordinator, entry),
         ZoraxyInboundPortSensor(coordinator, entry),
-        *[ZoraxyCertExpirySensor(coordinator, entry, d) for d in coordinator.data.get("cert_list", [])],
+        *async_track_cert_entities(
+            coordinator, entry, async_add_entities, lambda d: [ZoraxyCertExpirySensor(coordinator, entry, d)]
+        ),
     ]
     async_add_entities(entities)
 
@@ -32,7 +34,8 @@ class ZoraxyBaseSensor(ZoraxyEntity, SensorEntity):
 
     def _status_option(self) -> dict:
         status = self._data().get("proxy_status", {})
-        return status.get("Option", {}) if isinstance(status, dict) else {}
+        # "Option": null must not break the state: fall back to no option, as switch.py does.
+        return (status.get("Option") or {}) if isinstance(status, dict) else {}
 
 
 class ZoraxyProxyRulesCountSensor(ZoraxyBaseSensor):

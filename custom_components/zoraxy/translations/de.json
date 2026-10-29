@@ -78,7 +78,7 @@
         "name": "HTTPS-Umleitung"
       },
       "port_80": {
-        "name": "Listener auf Port 80"
+        "name": "Lauscht auf Port 80"
       },
       "development_mode": {
         "name": "Entwicklermodus"
@@ -92,7 +92,7 @@
         "name": "HTTPS-Umleitung"
       },
       "port_80": {
-        "name": "Listener auf Port 80"
+        "name": "Lauscht auf Port 80"
       },
       "development_mode": {
         "name": "Entwicklermodus"
@@ -102,6 +102,42 @@
       "renew": {
         "name": "{domain} erneuern"
       }
+    }
+  },
+  "services": {
+    "toggle_proxy_rule": {
+      "name": "Proxy-Regel umschalten",
+      "description": "Aktiviert oder deaktiviert eine Zoraxy-Proxy-Regel.",
+      "fields": {
+        "domain": {
+          "name": "Domain",
+          "description": "Die Domain der Proxy-Regel (z. B. „example.com“)."
+        },
+        "enable": {
+          "name": "Aktivieren",
+          "description": "true aktiviert die Regel, false deaktiviert sie. Weggelassen wird die Regel umgeschaltet."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "no_instance": {
+      "message": "Keine Zoraxy-Instanz geladen"
+    },
+    "rule_not_found": {
+      "message": "Zoraxy-Proxy-Regel „{domain}“ nicht gefunden"
+    },
+    "rule_change_failed": {
+      "message": "Zoraxy: Regel „{domain}“ konnte nicht geändert werden: {error}"
+    },
+    "acme_email_unavailable": {
+      "message": "Zoraxy: ACME-E-Mail nicht verfügbar"
+    },
+    "renewal_failed": {
+      "message": "Zoraxy: Erneuerung von {domain} fehlgeschlagen: {error}"
+    },
+    "command_failed": {
+      "message": "Zoraxy: {error}"
     }
   }
 }

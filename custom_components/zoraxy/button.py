@@ -6,12 +6,16 @@ from homeassistant.components.button import ButtonEntity
 
 from . import ZoraxyDataUpdateCoordinator
 from .const import safe_domain
-from .entity import ZoraxyDomainEntity
+from .entity import ZoraxyDomainEntity, async_track_cert_entities
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
     coordinator: ZoraxyDataUpdateCoordinator = entry.runtime_data
-    async_add_entities([ZoraxyCertRenewButton(coordinator, entry, d) for d in coordinator.data.get("cert_list", [])])
+    async_add_entities(
+        async_track_cert_entities(
+            coordinator, entry, async_add_entities, lambda d: [ZoraxyCertRenewButton(coordinator, entry, d)]
+        )
+    )
 
 
 class ZoraxyCertRenewButton(ZoraxyDomainEntity, ButtonEntity):

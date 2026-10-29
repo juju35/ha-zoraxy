@@ -103,5 +103,41 @@
         "name": "Renovar {domain}"
       }
     }
+  },
+  "services": {
+    "toggle_proxy_rule": {
+      "name": "Alternar regla de proxy",
+      "description": "Activa o desactiva una regla de proxy de Zoraxy.",
+      "fields": {
+        "domain": {
+          "name": "Dominio",
+          "description": "El dominio de la regla de proxy (por ejemplo, «example.com»)."
+        },
+        "enable": {
+          "name": "Activar",
+          "description": "true para activar la regla, false para desactivarla. Si se omite, la regla se alterna."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "no_instance": {
+      "message": "No hay ninguna instancia de Zoraxy cargada"
+    },
+    "rule_not_found": {
+      "message": "No se encontró la regla de proxy de Zoraxy «{domain}»"
+    },
+    "rule_change_failed": {
+      "message": "Zoraxy: no se pudo cambiar la regla «{domain}»: {error}"
+    },
+    "acme_email_unavailable": {
+      "message": "Zoraxy: correo electrónico ACME no disponible"
+    },
+    "renewal_failed": {
+      "message": "Zoraxy: falló la renovación de {domain}: {error}"
+    },
+    "command_failed": {
+      "message": "Zoraxy: {error}"
+    }
   }
 }

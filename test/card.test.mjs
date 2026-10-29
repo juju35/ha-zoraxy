@@ -168,3 +168,28 @@ test('the mini card editor adds zoom to the full editor schema', () => {
   assert.equal(mini.join(), [...base, 'zoom'].join());
   assert.equal(ZoraxyMiniCardEditor.DEFAULTS.zoom, true);
 });
+
+test('mini chips show a dash, not the raw state, for unknown or unavailable values', () => {
+  const states = {
+    [`sensor.${PREFIX}_regles_proxy`]: { state: 'unavailable', attributes: {} },
+    [`sensor.${PREFIX}_regles_actives`]: { state: 'unavailable', attributes: {} },
+    [`sensor.${PREFIX}_certificats_tls`]: { state: '2', attributes: {} },
+    [`sensor.${PREFIX}_port_entrant`]: { state: 'unknown', attributes: {} },
+  };
+  const html = makeCard(states, ZoraxyMiniCard)._miniChips();
+  assert.ok(!/unknown|unavailable/.test(html), html);
+  assert.match(html, /Port –/);
+  assert.match(html, /–\/– rules/);
+  assert.match(html, /2 certs/);
+});
+
+test('the card and the editors resolve the language the same way', () => {
+  assert.equal(ZoraxyCard.langOfHass({ locale: { language: 'de-AT' }, language: 'fr' }), 'de');
+  assert.equal(ZoraxyCard.langOfHass({ language: 'fr' }), 'fr');
+  assert.equal(ZoraxyCard.langOfHass(undefined), 'en');
+});
+
+test('French control labels are translated', () => {
+  assert.equal(ZoraxyCard.I18N.fr.httpsRedirect, 'Redirection HTTPS');
+  assert.equal(ZoraxyCard.I18N.fr.devMode, 'Mode dev');
+});

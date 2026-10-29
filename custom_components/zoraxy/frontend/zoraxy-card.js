@@ -43,7 +43,7 @@ class ZoraxyCard extends HTMLElement {
     fr: {
       active: "Actif", inactive: "Inactif",
       rules: "Règles", activeRules: "Actives", certs: "Certs", port: "Port",
-      controls: "Contrôles", httpsRedirect: "HTTPS redirect", port80: "Port 80", devMode: "Dev mode",
+      controls: "Contrôles", httpsRedirect: "Redirection HTTPS", port80: "Port 80", devMode: "Mode dev",
       certsSection: "Certificats", proxyRules: "Règles proxy", redirections: "Redirections",
       noCerts: "Aucun certificat trouvé.", noRules: "Aucune règle configurée.", noRedirects: "Aucune redirection configurée.",
       expired: "Expiré", renew: "Renouveler", daysLeft: "J-{n}",
@@ -266,7 +266,12 @@ class ZoraxyCard extends HTMLElement {
 
 
   _lang() {
-    return ZoraxyCard.langOf(this._hass?.locale?.language || navigator.language);
+    return ZoraxyCard.langOfHass(this._hass);
+  }
+
+  // The card and its editors resolve the language the same way: the user's locale, then the server language.
+  static langOfHass(hass) {
+    return ZoraxyCard.langOf(hass?.locale?.language || hass?.language);
   }
 
   // The supported language matching a locale ("de-AT" → "de"), English otherwise.
@@ -279,6 +284,11 @@ class ZoraxyCard extends HTMLElement {
 
   _prefix() { return this._config?.entity_prefix || "zoraxy_reverse_proxy_zoraxy"; }
   _state(id) { return this._hass?.states[id]?.state ?? "unavailable"; }
+  // A state meant to be read: "unknown" / "unavailable" (or a missing entity) shows as "–", never as the raw word.
+  _value(id) {
+    const state = this._state(id);
+    return state === "unknown" || state === "unavailable" ? "–" : state;
+  }
   _attr(id, attr) { return this._hass?.states[id]?.attributes?.[attr]; }
   _isOn(id) { return this._state(id) === "on"; }
 
@@ -464,10 +474,10 @@ class ZoraxyCard extends HTMLElement {
     const httpsRedirect = this._isOn(`${bp}_redirection_https`);
     const port80        = this._isOn(`${bp}_ecoute_port_80`);
     const devMode       = this._isOn(`${bp}_mode_developpement`);
-    const rulesCount    = this._state(`${sp}_regles_proxy`);
-    const activeCount   = this._state(`${sp}_regles_actives`);
-    const certCount     = this._state(`${sp}_certificats_tls`);
-    const port          = this._state(`${sp}_port_entrant`);
+    const rulesCount    = this._value(`${sp}_regles_proxy`);
+    const activeCount   = this._value(`${sp}_regles_actives`);
+    const certCount     = this._value(`${sp}_certificats_tls`);
+    const port          = this._value(`${sp}_port_entrant`);
     const rules         = this._attr(`${sp}_regles_proxy`, "rules") || [];
     const redirects     = this._attr(`${sp}_regles_proxy`, "redirects") || [];
     const zoraxyUrl     = zoraxySafeUrl(this._config.zoraxy_url);
@@ -644,8 +654,8 @@ class ZoraxyMiniCard extends ZoraxyCard {
     const sp = `sensor.${p}`;
     const bp = `binary_sensor.${p}`;
     const chips = [];
-    const total = this._state(`${sp}_regles_proxy`);
-    const active = this._state(`${sp}_regles_actives`);
+    const total = this._value(`${sp}_regles_proxy`);
+    const active = this._value(`${sp}_regles_actives`);
     chips.push(this._miniChip(`${sp}_regles_proxy`, "router", this._t("ruleCount").replace("{a}", active).replace("{n}", total), "ok"));
     // Certificates expiring within 30 days get a chip each, the closest first; otherwise one chip with their count.
     const expiring = this._certSensors(p)
@@ -657,9 +667,9 @@ class ZoraxyMiniCard extends ZoraxyCard {
       chips.push(this._miniChip(id, "cert", `${domain} · ${this._daysLabel(days)}`, cls, true));
     }
     if (!expiring.length) {
-      chips.push(this._miniChip(`${sp}_certificats_tls`, "cert", this._t("certCount").replace("{n}", this._state(`${sp}_certificats_tls`)), "ok"));
+      chips.push(this._miniChip(`${sp}_certificats_tls`, "cert", this._t("certCount").replace("{n}", this._value(`${sp}_certificats_tls`)), "ok"));
     }
-    chips.push(this._miniChip(`${sp}_port_entrant`, "web", `${this._t("port")} ${this._state(`${sp}_port_entrant`)}`, "idle"));
+    chips.push(this._miniChip(`${sp}_port_entrant`, "web", `${this._t("port")} ${this._value(`${sp}_port_entrant`)}`, "idle"));
     // Controls only show when they need a look: HTTPS redirect off, development mode (no cache) on.
     if (!this._isOn(`${bp}_redirection_https`)) {
       chips.push(this._miniChip(`${bp}_redirection_https`, "lock", `${this._t("httpsRedirect")} ${this._t("off")}`, "warn", true));
@@ -743,7 +753,7 @@ class ZoraxyCardEditor extends HTMLElement {
   _render() {
     if (!this._hass || !this._config) return;
     if (!this._form) {
-      const lang = ZoraxyCard.langOf(this._hass.locale?.language || this._hass.language);
+      const lang = ZoraxyCard.langOfHass(this._hass);
       const t = (key) => ZoraxyCard.I18N[lang][key];
       this._form = document.createElement("ha-form");
       this._form.schema = this.constructor.SCHEMA;

@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.11.2
+### Fixes
+- The *Proxy running* binary sensor (and the status chip of both cards) turns off when the proxy service is stopped in Zoraxy; it used to stay on as long as Zoraxy answered.
+
 ## 1.11.1
 ### Fixes
 - A certificate whose name is also a secondary name of another certificate (for example a `www.example.org` certificate next to an `example.org` certificate that also covers `www.example.org`) shows its own expiry date again, so its expiring alert is no longer hidden by the other certificate.

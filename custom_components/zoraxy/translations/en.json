@@ -128,7 +128,7 @@
       "message": "Zoraxy proxy rule '{domain}' not found"
     },
     "rule_change_failed": {
-      "message": "Zoraxy: could not change the rule '{domain}': {error}"
+      "message": "Zoraxy: could not change the rule {domain}: {error}"
     },
     "acme_email_unavailable": {
       "message": "Zoraxy: ACME email not available"

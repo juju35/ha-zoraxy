@@ -133,6 +133,9 @@
     "acme_email_unavailable": {
       "message": "Zoraxy: correo electrónico ACME no disponible"
     },
+    "wildcard_renewal": {
+      "message": "Zoraxy: {domain} es un certificado comodín, que requiere un desafío DNS: renuévelo en Zoraxy"
+    },
     "renewal_failed": {
       "message": "Zoraxy: falló la renovación de {domain}: {error}"
     },

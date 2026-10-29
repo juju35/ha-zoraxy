@@ -288,6 +288,14 @@ class ZoraxyDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def renew_certificate(self, domain: str) -> None:
         """Ask Zoraxy for a new ACME certificate. Raises HomeAssistantError on failure."""
+        if domain.startswith("_."):
+            # Zoraxy stores *.example.org as _.example.org. A wildcard needs a DNS challenge, which this HTTP
+            # renewal cannot do: say so instead of sending a request that cannot succeed.
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="wildcard_renewal",
+                translation_placeholders={"domain": domain},
+            )
         if not self._acme_email:
             # Not read yet (Zoraxy was starting, a request timed out): read it now instead of at the next poll.
             await self._async_fetch_acme()
@@ -317,6 +325,9 @@ class ZoraxyDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def _extract_cert_expiry(self, proxy_status: dict) -> dict[str, str]:
         all_certs = ((proxy_status.get("Option") or {}).get("TlsManager") or {}).get("LoadedCerts") or []
         names: list[tuple[list[str], str]] = []
+        # The file listed by /api/cert/list is the key file name (Zoraxy fills PriKey with CertStore/<name>.key):
+        # the only reliable key for a wildcard (*.example.org is stored as _.example.org) or an imported certificate.
+        result: dict[str, str] = {}
         seen: set[str] = set()
         for c in all_certs:
             if not isinstance(c, dict):
@@ -328,13 +339,15 @@ class ZoraxyDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             cert = c.get("Cert")
             if not isinstance(cert, dict):
                 continue
-            dns = [name for name in cert.get("DNSNames") or [] if isinstance(name, str)]
-            if dns and (expiry := cert.get("NotAfter", "")):
+            if not (expiry := cert.get("NotAfter", "")):
+                continue
+            if isinstance(pk, str) and (file_name := pk.replace("\\", "/").rsplit("/", 1)[-1]).endswith(".key"):
+                result[file_name.removesuffix(".key")] = expiry
+            if dns := [name for name in cert.get("DNSNames") or [] if isinstance(name, str)]:
                 names.append((dns, expiry))
-        # The main name of each certificate first, so that a certificate of its own always wins...
-        result: dict[str, str] = {}
+        # Then the main name of each certificate, so that a certificate of its own wins over a secondary name...
         for dns, expiry in names:
-            result[dns[0]] = expiry
+            result.setdefault(dns[0], expiry)
         # ...then the other SANs: the file listed by /api/cert/list may be named after any of them.
         for dns, expiry in names:
             for name in dns[1:]:

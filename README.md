@@ -126,7 +126,7 @@ Same options as the full card, plus:
 | `sensor.*_port_entrant` | Proxy listening port |
 | `sensor.*_cert_{domain}` | Certificate expiry date |
 | `binary_sensor.*_cert_expirant_{domain}` | `on` when the certificate expires in less than 30 days |
-| `button.*_renouveler_{domain}` | Triggers the ACME renewal |
+| `button.*_renouveler_{domain}` | Triggers the ACME renewal (HTTP challenge). A wildcard certificate (listed by Zoraxy as `_.example.org`) needs a DNS challenge: renew it in Zoraxy, the button only explains it |
 | `binary_sensor.*_proxy_actif` | Proxy running |
 | `binary_sensor.*_tls_active` | TLS enabled |
 | `binary_sensor.*_redirection_https` | HTTP → HTTPS redirect |

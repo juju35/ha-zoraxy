@@ -1,6 +1,9 @@
 # Changelog
 
-## 1.10.2
+## 1.11.0
+### What's new
+- Card: new `language` option (also in the visual editors of both cards) to force English, French, German or Spanish instead of the Home Assistant language.
+
 ### Fixes
 - Certificate renewal no longer fails with "ACME email not available" for an hour when Zoraxy could not answer at startup: the ACME settings are read again at the next update, and a renewal reads them itself when they are still missing.
 - The integration no longer becomes unavailable when Zoraxy reports a certificate without data (`"Cert": null`), and the sensors and binary sensors keep working when the proxy options are missing (`"Option": null`).
@@ -10,7 +13,7 @@
 - Card: an unknown or unavailable value shows as `–` instead of the raw `unknown` / `unavailable` (port, rule and certificate counts); French "Redirection HTTPS" and "Mode dev" labels; the card and its editor pick the language the same way.
 
 ### Maintenance
-- Screenshots workflow: fork-safe checkout, pinned Playwright, time-boxed and retried Chromium download, explicit failure after three apt attempts. HACS validation no longer runs twice for the same branch.
+- Screenshots workflow: fork-safe checkout, pinned Playwright, time-boxed and retried Chromium download, explicit failure after three apt attempts. HACS validation no longer runs twice for the same branch. When the screenshots workflow pushes refreshed screenshots to a pull request, it re-runs Lint, Validate and HACS validation on that commit.
 
 ## 1.10.1
 ### Fixes

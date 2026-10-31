@@ -6,12 +6,16 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+  # Called by Release, so that a version is published only once these checks pass.
+  workflow_call:
 
 permissions:
   contents: read
 
+# github.workflow is "Release" when called from Release: the group then stays distinct from this
+# workflow's own push run on main, so neither cancels the other.
 concurrency:
-  group: lint-${{ github.head_ref || github.ref_name }}
+  group: lint-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:

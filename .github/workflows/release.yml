@@ -15,7 +15,27 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # A commit is released only once Lint, Validate and HACS Validation pass on it.
+  lint:
+    name: Lint
+    uses: ./.github/workflows/lint.yml
+    permissions:
+      contents: read
+
+  validate:
+    name: Validate
+    uses: ./.github/workflows/validate.yml
+    permissions:
+      contents: read
+
+  hacs:
+    name: HACS Validation
+    uses: ./.github/workflows/hacs.yml
+    permissions:
+      contents: read
+
   release:
+    needs: [lint, validate, hacs]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

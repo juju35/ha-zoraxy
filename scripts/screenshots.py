@@ -86,8 +86,9 @@ STATES = dict(
 )
 
 SHOTS = [
+    # Each light/dark pair shows exactly the same state: only the theme changes.
     {"file": "card", "theme": "light", "open": ["certs"]},
-    {"file": "card-dark", "theme": "dark", "open": ["rules"]},
+    {"file": "card-dark", "theme": "dark", "open": ["certs"]},
     # The mini card, and the same card zoomed in (its detail button clicked).
     {"file": "mini", "theme": "light", "tag": "zoraxy-mini-card", "width": MINI_WIDTH},
     {"file": "mini-dark", "theme": "dark", "tag": "zoraxy-mini-card", "width": MINI_WIDTH},
